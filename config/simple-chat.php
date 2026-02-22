@@ -64,6 +64,30 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Rate Limiting
+    |--------------------------------------------------------------------------
+    |
+    | Define how many messages a single user can send per minute to prevent DOS
+    | attacks. Default is 60 messages per minute.
+    |
+    */
+    'rate_limit' => env('SIMPLE_CHAT_RATE_LIMIT', 60),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Notifications
+    |--------------------------------------------------------------------------
+    |
+    | Provide a comma-separated list of email addresses that should be alerted
+    | when a new ticket is opened. Leave blank to disable alerts entirely.
+    |
+    */
+    'notifications' => [
+        'email_addresses' => env('SIMPLE_CHAT_NOTIFY_EMAILS', ''),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Message Input Editor
     |--------------------------------------------------------------------------
     |

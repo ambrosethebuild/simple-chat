@@ -4,8 +4,10 @@ namespace SimpleChat\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use SimpleChat\Facades\SimpleChat;
+use SimpleChat\Jobs\SendNewConversationNotificationJob;
 use SimpleChat\Models\Conversation;
 
 class SimpleChatController extends Controller
@@ -212,11 +214,25 @@ class SimpleChatController extends Controller
             'content' => 'required|string|max:1000',
         ]);
 
+        $rateLimit = config('simple-chat.rate_limit', 60);
+        $key = 'send-message:' . auth()->id();
+
+        if (RateLimiter::tooManyAttempts($key, $rateLimit)) {
+            abort(429, 'Too many messages sent. Please try again later.');
+        }
+
+        RateLimiter::hit($key, 60);
+
         SimpleChat::sendMessage(
             $id,
             auth()->id(),
             $request->content
         );
+
+        $messages = SimpleChat::getMessages($id, 2);
+        if ($messages->count() === 1) {
+            SendNewConversationNotificationJob::dispatch($id, $request->content);
+        }
 
         return back();
     }
