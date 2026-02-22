@@ -1,0 +1,19 @@
+<?php
+
+use Illuminate\Support\Facades\Route;
+use SimpleChat\Http\Controllers\SimpleChatController;
+
+Route::group([
+    'prefix' => config('simple-chat.route_prefix', 'chat'),
+    'middleware' => config('simple-chat.middleware', ['web', 'auth']),
+    'as' => 'simple-chat.',
+], function () {
+    Route::get('/', [SimpleChatController::class, 'index'])->name('index');
+    Route::get('/create', [SimpleChatController::class, 'create'])->name('create');
+    Route::post('/start', [SimpleChatController::class, 'start'])->name('start');
+    Route::get('/{conversation}', [SimpleChatController::class, 'show'])->name('show');
+    Route::post('/{conversation}/close', [SimpleChatController::class, 'close'])->name('close');
+    Route::post('/{conversation}/assign', [SimpleChatController::class, 'assign'])->name('assign');
+    Route::get('/{conversation}/messages', [SimpleChatController::class, 'fetchMessages'])->name('messages.fetch');
+    Route::post('/{conversation}/messages', [SimpleChatController::class, 'store'])->name('messages.store');
+});
