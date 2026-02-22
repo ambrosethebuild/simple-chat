@@ -164,7 +164,7 @@ class SimpleChatController extends Controller
 
         $deleteMode = config('simple-chat.support.delete_mode', 'soft');
 
-        if ($deleteMode === 'hard') {
+        if ($deleteMode === 'hard' || $conversation->trashed()) {
             $conversation->forceDelete();
         } else {
             $conversation->delete();
