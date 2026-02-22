@@ -5,11 +5,20 @@
     <div class="max-w-4xl mx-auto py-10 px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center mb-8">
             <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
-                {!! config('simple-chat.titles.index', 'Messages') !!}</h1>
-            <a href="{{ route('simple-chat.create') }}"
-                class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white {{ config('simple-chat.theme.primary_color', 'bg-indigo-600') }} {{ config('simple-chat.theme.primary_hover', 'hover:bg-indigo-700') }} focus:outline-none focus:ring-2 focus:ring-offset-2 {{ config('simple-chat.theme.primary_ring', 'focus:ring-indigo-500') }} transition-colors duration-200">
-                New Message
-            </a>
+                {!! isset($showingTrashed) && $showingTrashed ? 'Deleted Tickets' : config('simple-chat.titles.index', 'Messages') !!}</h1>
+            <div class="flex items-center space-x-4">
+                @if(config('simple-chat.mode') === 'support' && auth()->check() && config('simple-chat.support.delete_mode', 'soft') === 'soft' && auth()->user()->can(config('simple-chat.support.permissions.view_deleted_tickets', 'view-deleted-tickets')))
+                    @if(isset($showingTrashed) && $showingTrashed)
+                        <a href="{{ route('simple-chat.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900 font-medium">View Active</a>
+                    @else
+                        <a href="{{ route('simple-chat.trashed') }}" class="text-sm text-gray-600 hover:text-gray-900 font-medium">View Trashed</a>
+                    @endif
+                @endif
+                <a href="{{ route('simple-chat.create') }}"
+                    class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white {{ config('simple-chat.theme.primary_color', 'bg-indigo-600') }} {{ config('simple-chat.theme.primary_hover', 'hover:bg-indigo-700') }} focus:outline-none focus:ring-2 focus:ring-offset-2 {{ config('simple-chat.theme.primary_ring', 'focus:ring-indigo-500') }} transition-colors duration-200">
+                    New Message
+                </a>
+            </div>
         </div>
 
         <div class="bg-white shadow overflow-hidden sm:rounded-md">

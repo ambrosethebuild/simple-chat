@@ -44,10 +44,15 @@ return [
             'assign_tickets' => env('SIMPLE_CHAT_PERM_ASSIGN', 'assign-tickets'),
             'reply_ticket' => env('SIMPLE_CHAT_PERM_REPLY', 'reply-ticket'),
             'close_ticket' => env('SIMPLE_CHAT_PERM_CLOSE', 'close-ticket'),
+            'delete_ticket' => env('SIMPLE_CHAT_PERM_DELETE', 'delete-ticket'),
+            'view_deleted_tickets' => env('SIMPLE_CHAT_PERM_VIEW_DELETED', 'view-deleted-tickets'),
         ],
 
         // Maximum number of active tickets a user can have open
         'max_active_tickets' => env('SIMPLE_CHAT_MAX_TICKETS', 3),
+
+        // How should tickets be deleted? 'soft' or 'hard'
+        'delete_mode' => env('SIMPLE_CHAT_DELETE_MODE', 'soft'),
     ],
 
     /*

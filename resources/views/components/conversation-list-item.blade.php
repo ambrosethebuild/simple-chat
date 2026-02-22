@@ -52,7 +52,12 @@
                     @endif
 
                     <div class="flex items-center space-x-2">
-                        @if ($conversation->status === 'closed')
+                        @if ($conversation->trashed())
+                            <p
+                                class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full bg-gray-100 text-gray-800">
+                                Deleted
+                            </p>
+                        @elseif ($conversation->status === 'closed')
                             <p
                                 class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full bg-red-100 text-red-800">
                                 Closed

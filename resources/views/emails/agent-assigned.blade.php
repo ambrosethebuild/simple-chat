@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Conversation Activity</title>
+    <title>Agent Assigned</title>
     <style>
         body {
             margin: 0;
@@ -56,19 +56,6 @@
             color: #4b5563;
         }
 
-        .message-box {
-            background-color: #f9fafb;
-            border-left: 4px solid #4f46e5;
-            padding: 16px;
-            margin: 24px 0;
-            border-radius: 0 4px 4px 0;
-        }
-
-        .message-box p {
-            margin: 0;
-            color: #1f2937;
-        }
-
         .button-wrap {
             text-align: center;
             margin-top: 32px;
@@ -84,6 +71,11 @@
             border-radius: 6px;
             font-weight: 500;
             font-size: 16px;
+        }
+
+        .icon-wrap {
+            text-align: center;
+            margin-bottom: 24px;
         }
 
         .footer {
@@ -103,25 +95,28 @@
                     <table class="main" cellpadding="0" cellspacing="0" border="0">
                         <tr>
                             <td class="header">
-                                <h1>New Conversation Activity</h1>
+                                <h1>Support Ticket Update</h1>
                             </td>
                         </tr>
                         <tr>
                             <td class="content">
-                                <p>A new conversation (ID: <strong>{{ $conversationId }}</strong>) has been opened or
-                                    received its first message.</p>
-
-                                @if($messageContent)
-                                    <div class="message-box">
-                                        <p style="font-size: 14px; color: #6b7280; margin-bottom: 8px;"><strong>First
-                                                Message:</strong></p>
-                                        <p>{!! nl2br(e($messageContent)) !!}</p>
-                                    </div>
-                                @endif
+                                <div class="icon-wrap">
+                                    <svg style="width: 64px; height: 64px; color: #4f46e5; display: inline-block;"
+                                        fill="none" stroke="currentColor" viewBox="0 0 24 24"
+                                        xmlns="http://www.w3.org/2000/svg">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z">
+                                        </path>
+                                    </svg>
+                                </div>
+                                <p style="text-align: center; font-size: 18px; color: #111827;">An agent has been
+                                    assigned to your support ticket.</p>
+                                <p style="text-align: center; margin-top: 8px;">They are currently reviewing your
+                                    request and will be in touch shortly.</p>
 
                                 <div class="button-wrap">
                                     <a href="{{ route('simple-chat.show', $conversationId) }}" class="button">View
-                                        Conversation</a>
+                                        Ticket Summary</a>
                                 </div>
                             </td>
                         </tr>

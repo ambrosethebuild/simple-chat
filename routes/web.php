@@ -9,9 +9,12 @@ Route::group([
     'as' => 'simple-chat.',
 ], function () {
     Route::get('/', [SimpleChatController::class, 'index'])->name('index');
+    Route::get('/trashed', [SimpleChatController::class, 'trashed'])->name('trashed');
     Route::get('/create', [SimpleChatController::class, 'create'])->name('create');
     Route::post('/start', [SimpleChatController::class, 'start'])->name('start');
     Route::get('/{conversation}', [SimpleChatController::class, 'show'])->name('show');
+    Route::delete('/{conversation}', [SimpleChatController::class, 'destroy'])->name('destroy');
+    Route::post('/{conversation}/restore', [SimpleChatController::class, 'restore'])->name('restore');
     Route::post('/{conversation}/close', [SimpleChatController::class, 'close'])->name('close');
     Route::post('/{conversation}/assign', [SimpleChatController::class, 'assign'])->name('assign');
     Route::get('/{conversation}/messages', [SimpleChatController::class, 'fetchMessages'])->name('messages.fetch');

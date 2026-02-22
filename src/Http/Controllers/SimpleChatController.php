@@ -7,6 +7,7 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use SimpleChat\Facades\SimpleChat;
+use SimpleChat\Jobs\SendAgentAssignedNotificationJob;
 use SimpleChat\Jobs\SendNewConversationNotificationJob;
 use SimpleChat\Models\Conversation;
 
@@ -101,6 +102,7 @@ class SimpleChatController extends Controller
         if (!in_array($userId, $participants)) {
             $participants[] = $userId;
             $conversation->update(['participants' => $participants]);
+            SendAgentAssignedNotificationJob::dispatch($id, $userId);
         }
 
         return back()->with('success', 'Assigned successfully.');
@@ -124,9 +126,76 @@ class SimpleChatController extends Controller
         return redirect()->route('simple-chat.index')->with('success', 'Ticket closed successfully.');
     }
 
+    public function trashed()
+    {
+        $mode = config('simple-chat.mode', 'direct');
+        $deleteMode = config('simple-chat.support.delete_mode', 'soft');
+
+        if ($mode !== 'support' || !auth()->check() || $deleteMode !== 'soft') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $viewDeletedPerm = config('simple-chat.support.permissions.view_deleted_tickets', 'view-deleted-tickets');
+        if (!auth()->user()->can($viewDeletedPerm)) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $conversations = Conversation::onlyTrashed()->latest('deleted_at')->get();
+
+        $user = auth()->user();
+        $canViewTickets = $user->can(config('simple-chat.support.permissions.view_tickets', 'view-tickets'));
+        $canAssignTickets = $user->can(config('simple-chat.support.permissions.assign_tickets', 'assign-tickets'));
+
+        return view('simple-chat::index', compact('conversations', 'mode', 'canViewTickets', 'canAssignTickets'))->with('showingTrashed', true);
+    }
+
+    public function destroy($id)
+    {
+        $mode = config('simple-chat.mode', 'direct');
+
+        if ($mode === 'support' && auth()->check()) {
+            $deletePerm = config('simple-chat.support.permissions.delete_ticket', 'delete-ticket');
+            if (!auth()->user()->can($deletePerm)) {
+                abort(403, 'Unauthorized action.');
+            }
+        }
+
+        $conversation = Conversation::withTrashed()->findOrFail($id);
+
+        $deleteMode = config('simple-chat.support.delete_mode', 'soft');
+
+        if ($deleteMode === 'hard') {
+            $conversation->forceDelete();
+        } else {
+            $conversation->delete();
+        }
+
+        return redirect()->route('simple-chat.index')->with('success', 'Ticket deleted successfully.');
+    }
+
+    public function restore($id)
+    {
+        $mode = config('simple-chat.mode', 'direct');
+        $deleteMode = config('simple-chat.support.delete_mode', 'soft');
+
+        if ($mode !== 'support' || !auth()->check() || $deleteMode !== 'soft') {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $deletePerm = config('simple-chat.support.permissions.delete_ticket', 'delete-ticket');
+        if (!auth()->user()->can($deletePerm)) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $conversation = Conversation::onlyTrashed()->findOrFail($id);
+        $conversation->restore();
+
+        return back()->with('success', 'Ticket restored successfully.');
+    }
+
     public function show($id)
     {
-        $conversation = SimpleChat::getConversation($id);
+        $conversation = Conversation::withTrashed()->findOrFail($id);
         $messages = SimpleChat::getMessages($id, 50)->reverse(); // Show oldest first
 
         $defaultDriver = config('simple-chat.default');
@@ -172,7 +241,7 @@ class SimpleChatController extends Controller
             }
         }
 
-        if ($conversation->status === 'closed') {
+        if ($conversation->status === 'closed' || $conversation->trashed()) {
             $canReply = false;
         }
 

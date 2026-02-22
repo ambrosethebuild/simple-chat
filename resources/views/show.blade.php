@@ -19,15 +19,37 @@
             </div>
             <div>
                 <p class="text-sm text-gray-500">{{ $conversation->updated_at->diffForHumans() }}</p>
-                @if($conversation->status != 'closed')
-                    @can("close_ticket")
-                        <button type="button"
-                            class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                            onclick="document.getElementById('sc-close-modal').classList.remove('hidden')">
-                            Close Ticket
-                        </button>
-                    @endcan
-                @endif
+                <div class="flex space-x-2">
+                    @if($conversation->status != 'closed' && !$conversation->trashed())
+                        @can("close-ticket")
+                            <button type="button"
+                                class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
+                                onclick="document.getElementById('sc-close-modal').classList.remove('hidden')">
+                                Close Ticket
+                            </button>
+                        @endcan
+                    @endif
+                    @if(config('simple-chat.mode') === 'support' && auth()->check() && auth()->user()->can(config('simple-chat.support.permissions.delete_ticket', 'delete-ticket')))
+                        @if($conversation->trashed())
+                            <button type="button"
+                                class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
+                                onclick="document.getElementById('sc-restore-modal').classList.remove('hidden')">
+                                Restore Ticket
+                            </button>
+                            <button type="button"
+                                class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                                onclick="document.getElementById('sc-delete-modal').classList.remove('hidden')">
+                                Permanent Delete
+                            </button>
+                        @else
+                            <button type="button"
+                                class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                                onclick="document.getElementById('sc-delete-modal').classList.remove('hidden')">
+                                Delete Ticket
+                            </button>
+                        @endif
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -82,7 +104,9 @@
         <div class="bg-white shadow px-4 py-4 sm:px-6 rounded-b-lg shrink-0 border border-gray-200">
             @if(isset($canReply) && !$canReply)
                 <div class="text-center text-sm text-gray-500 py-2">
-                    @if($conversation->status === 'closed')
+                    @if($conversation->trashed())
+                        This conversation has been deleted.
+                    @elseif($conversation->status === 'closed')
                         This conversation is closed.
                     @else
                         You do not have permission to reply to this conversation.
@@ -160,6 +184,102 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="sc-delete-modal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title-delete"
+        role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+                onclick="document.getElementById('sc-delete-modal').classList.add('hidden')"></div>
+
+            <!-- Modal panel -->
+            <div
+                class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div class="sm:flex sm:items-start">
+                    <div
+                        class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-red-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <!-- Heroicon: trash -->
+                        <svg class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title-delete">Delete Ticket</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">
+                                Are you sure you want to delete this ticket? This action may be permanent based on
+                                configuration.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <form action="{{ route('simple-chat.destroy', $conversation->id) }}" method="POST">
+                        @csrf
+                        @method('DELETE')
+                        <button type="submit"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Confirm Delete
+                        </button>
+                    </form>
+                    <button type="button"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
+                        onclick="document.getElementById('sc-delete-modal').classList.add('hidden')">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Restore Confirmation Modal -->
+    <div id="sc-restore-modal" class="fixed z-10 inset-0 overflow-y-auto hidden" aria-labelledby="modal-title-restore"
+        role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <!-- Background overlay -->
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+                onclick="document.getElementById('sc-restore-modal').classList.add('hidden')"></div>
+
+            <!-- Modal panel -->
+            <div
+                class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <div class="sm:flex sm:items-start">
+                    <div
+                        class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
+                        <!-- Heroicon: arrow-uturn-left -->
+                        <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                        </svg>
+                    </div>
+                    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title-restore">Restore Ticket</h3>
+                        <div class="mt-2">
+                            <p class="text-sm text-gray-500">
+                                Are you sure you want to restore this ticket?
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="mt-5 sm:mt-4 sm:flex sm:flex-row-reverse">
+                    <form action="{{ route('simple-chat.restore', $conversation->id) }}" method="POST">
+                        @csrf
+                        <button type="submit"
+                            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+                            Confirm Restore
+                        </button>
+                    </form>
+                    <button type="button"
+                        class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
+                        onclick="document.getElementById('sc-restore-modal').classList.add('hidden')">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     @if(isset($editor) && $editor === 'wysiwyg')
         <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
         <script src="https://cdn.quilljs.com/1.3.6/quill.min.js"></script>
@@ -222,7 +342,7 @@
             });
         @endif
 
-                                                                const conversationId = "{{ $conversation->id }}";
+                                                                                        const conversationId = "{{ $conversation->id }}";
         const currentUserId = "{{ auth()->id() }}";
         const fetchUrl = "{{ route('simple-chat.messages.fetch', $conversation->id) }}";
         const storeUrl = "{{ route('simple-chat.messages.store', $conversation->id) }}";
@@ -388,13 +508,13 @@
             const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             div.innerHTML = `
-                                                                                                                                                                                                                                            <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm ${isMe ? '${chatConfig.theme.primary_color || "bg-indigo-600"} text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none'}">
-                                                                                                                                                                                                                                                <p class="text-sm">${escapeHtml(msg.content)}</p>
-                                                                                                                                                                                                                                                <p class="text-xs mt-1 ${isMe ? 'text-white/70' : 'text-gray-400'}">
-                                                                                                                                                                                                                                                    ${time}
-                                                                                                                                                                                                                                                </p>
-                                                                                                                                                                                                                                            </div>
-                                                                                                                                                                                                                                        `;
+                                                                                                                                                                                                                                                                    <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm ${isMe ? '${chatConfig.theme.primary_color || "bg-indigo-600"} text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none'}">
+                                                                                                                                                                                                                                                                        <p class="text-sm">${escapeHtml(msg.content)}</p>
+                                                                                                                                                                                                                                                                        <p class="text-xs mt-1 ${isMe ? 'text-white/70' : 'text-gray-400'}">
+                                                                                                                                                                                                                                                                            ${time}
+                                                                                                                                                                                                                                                                        </p>
+                                                                                                                                                                                                                                                                    </div>
+                                                                                                                                                                                                                                                                `;
 
             const emptyState = document.getElementById('sc-empty-state');
             if (emptyState) emptyState.remove();
