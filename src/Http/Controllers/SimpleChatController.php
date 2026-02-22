@@ -161,7 +161,12 @@ class SimpleChatController extends Controller
             $isCreator = isset($participants[0]) && $participants[0] == $user->id;
 
             if (!$isCreator) {
-                $canReply = $user->can(config('simple-chat.support.permissions.reply_ticket', 'reply-ticket'));
+                $isAssigned = in_array((string) $user->id, $participants) || in_array($user->id, $participants);
+                if ($isAssigned) {
+                    $canReply = $user->can(config('simple-chat.support.permissions.reply_ticket', 'reply-ticket'));
+                } else {
+                    $canReply = false;
+                }
             }
         }
 
@@ -191,6 +196,11 @@ class SimpleChatController extends Controller
             $isCreator = isset($participants[0]) && $participants[0] == $user->id;
 
             if (!$isCreator) {
+                $isAssigned = in_array((string) $user->id, $participants) || in_array($user->id, $participants);
+                if (!$isAssigned) {
+                    abort(403, 'You must be assigned to this ticket to reply.');
+                }
+
                 $replyPerm = config('simple-chat.support.permissions.reply_ticket', 'reply-ticket');
                 if (!$user->can($replyPerm)) {
                     abort(403, 'Unauthorized to reply.');
