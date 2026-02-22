@@ -20,7 +20,7 @@ class SqliteShardedDriver implements ChatDriver
     public function getConversation(string $id, array $participants = [])
     {
         // 1. Find or Create the Metadata Record in Main DB
-        $conversation = Conversation::firstOrCreate(
+        $conversation = Conversation::withTrashed()->firstOrCreate(
             ['id' => $id],
             ['participants' => $participants]
         );

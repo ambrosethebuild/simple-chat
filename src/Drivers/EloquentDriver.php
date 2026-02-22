@@ -18,7 +18,7 @@ class EloquentDriver implements ChatDriver
 
     public function getConversation(string $id, array $participants = [])
     {
-        return Conversation::firstOrCreate(
+        return Conversation::withTrashed()->firstOrCreate(
             ['id' => $id],
             ['participants' => $participants]
         );
