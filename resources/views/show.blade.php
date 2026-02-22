@@ -69,7 +69,8 @@
         @endif
 
         <!-- Messages -->
-        <div class="flex-1 overflow-y-auto scroll-smooth space-y-4 py-4 px-2 border-l border-gray-200 border-r">
+        <div class="flex-1 overflow-y-auto scroll-smooth space-y-4 py-4 px-2 border-l border-gray-200 border-r"
+            id="sc-messages-container">
             @forelse($messages as $message)
                 @include('simple-chat::components.message-item', ['message' => $message])
             @empty
@@ -221,7 +222,7 @@
             });
         @endif
 
-                                                            const conversationId = "{{ $conversation->id }}";
+                                                                const conversationId = "{{ $conversation->id }}";
         const currentUserId = "{{ auth()->id() }}";
         const fetchUrl = "{{ route('simple-chat.messages.fetch', $conversation->id) }}";
         const storeUrl = "{{ route('simple-chat.messages.store', $conversation->id) }}";
@@ -387,13 +388,13 @@
             const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             div.innerHTML = `
-                                                                                                                                                                                                                                        <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm ${isMe ? '${chatConfig.theme.primary_color || "bg-indigo-600"} text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none'}">
-                                                                                                                                                                                                                                            <p class="text-sm">${escapeHtml(msg.content)}</p>
-                                                                                                                                                                                                                                            <p class="text-xs mt-1 ${isMe ? 'text-white/70' : 'text-gray-400'}">
-                                                                                                                                                                                                                                                ${time}
-                                                                                                                                                                                                                                            </p>
-                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                    `;
+                                                                                                                                                                                                                                            <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm ${isMe ? '${chatConfig.theme.primary_color || "bg-indigo-600"} text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none'}">
+                                                                                                                                                                                                                                                <p class="text-sm">${escapeHtml(msg.content)}</p>
+                                                                                                                                                                                                                                                <p class="text-xs mt-1 ${isMe ? 'text-white/70' : 'text-gray-400'}">
+                                                                                                                                                                                                                                                    ${time}
+                                                                                                                                                                                                                                                </p>
+                                                                                                                                                                                                                                            </div>
+                                                                                                                                                                                                                                        `;
 
             const emptyState = document.getElementById('sc-empty-state');
             if (emptyState) emptyState.remove();
