@@ -135,6 +135,19 @@ Head over to your configured application root route, natively set to `yourdomain
 
 Enjoy building scalable chat systems swiftly!
 
+---
+
+## Future Implementations Roadmap
+
+We are continuously working to expand the package's capabilities. Planned features for future versions include:
+
+1. **Pusher/Laravel WebSockets Integration:** Enabling native real-time broadcasting without relying solely on Appwrite/Supabase SDKs.
+2. **File & Media Attachments:** Securely sharing images, PDFs, or code snippets directly within a chat thread.
+3. **Read Receipts:** Visual indicators tracking when a user or assigned agent has viewed the latest message block.
+4. **Agent Dashboard Matrix:** A dedicated, robust UI component with quick status filters (Open, Closed, Unassigned, Mine) to bolster helpdesk task management for support teams.
+
+---
+
 ## License
 
 [MIT License](LICENSE)
