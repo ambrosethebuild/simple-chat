@@ -40,7 +40,7 @@
                             $parts = is_array($conversation->participants) ? $conversation->participants : json_decode($conversation->participants ?? '[]', true);
                             $isAssigned = is_array($parts) && count($parts) > 1;
                         @endphp
-                        @if(!$isAssigned)
+                        @if(!$isAssigned && $conversation->status !== 'closed' && !$conversation->trashed())
                             <form action="{{ route('simple-chat.assign', $conversation->id) }}" method="POST">
                                 @csrf
                                 <button type="submit"

@@ -8,7 +8,7 @@ A flexible, drop-in Laravel chat package designed to support both peer-to-peer m
 - **Two Distinct Modes:** Run peer-to-peer direct conversations (`direct`) or assignment-based helpdesk ticket flows (`support`).
 - **Support Workflows:** Assign agents, enforce Role-Based Access Control (RBAC) permissions (view, assign, reply, close), and prevent duplicated active tickets per user.
 - **Realtime Ready:** Features built-in out-of-the-box frontend listener strategy for Appwrite and Supabase Realtime SDKs, seamlessly falling back to long-polling for standard drivers.
-- **Ticket Lifecycles:** Close dormant support tickets completely using a clean ticket-closing mechanic.
+- **Ticket Lifecycles:** Support soft and hard deletes with restore functionality. Automatically prevent assignments and new replies on closed and trashed tickets.
 - **Rich User Interface:** Uses Tailwind CSS, bundled with elegant, configurable themes. Use a clean auto-expanding textarea or toggle the robust WYSIWYG editor (Quill.js). 
 - **Isolated Blade Components:** Clean customizable views mapped through configuration values.
 

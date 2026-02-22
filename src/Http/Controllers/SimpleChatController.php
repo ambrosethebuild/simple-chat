@@ -163,14 +163,15 @@ class SimpleChatController extends Controller
         $conversation = Conversation::withTrashed()->findOrFail($id);
 
         $deleteMode = config('simple-chat.support.delete_mode', 'soft');
-
+        $routeName = 'simple-chat.index';
         if ($deleteMode === 'hard' || $conversation->trashed()) {
             $conversation->forceDelete();
+            $routeName = 'simple-chat.trashed';
         } else {
             $conversation->delete();
         }
 
-        return redirect()->route('simple-chat.index')->with('success', 'Ticket deleted successfully.');
+        return redirect()->route($routeName)->with('success', 'Ticket deleted successfully.');
     }
 
     public function restore($id)
@@ -277,6 +278,11 @@ class SimpleChatController extends Controller
                     abort(403, 'Unauthorized to reply.');
                 }
             }
+        }
+
+        $conversation = Conversation::withTrashed()->findOrFail($id);
+        if ($conversation->status === 'closed' || $conversation->trashed()) {
+            abort(403, 'You cannot reply to a closed or trashed ticket.');
         }
 
         $request->validate([
