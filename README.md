@@ -16,7 +16,18 @@ A flexible, drop-in Laravel chat package designed to support both peer-to-peer m
 
 ## Installation
 
-You can install the package by updating your `composer.json` repositories and then requiring it (assumes local package development path for now):
+You can install the package by defining it as a VCS repository in your project's `composer.json` since it is hosted on GitHub:
+
+```json
+"repositories": [
+    {
+        "type": "vcs",
+        "url": "https://github.com/ambrosethebuild/simple-chat"
+    }
+]
+```
+
+Then, require the package:
 
 ```bash
 composer require ambrosethebuild/simple-chat
