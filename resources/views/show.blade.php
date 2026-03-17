@@ -556,7 +556,6 @@
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} message-item`;
             div.dataset.id = msg.id;
 
-            const date = new Date(msg.created_at || new Date());
             const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
             div.innerHTML = `
