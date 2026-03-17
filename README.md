@@ -103,6 +103,26 @@ SIMPLE_CHAT_MAX_TICKETS=3
 SIMPLE_CHAT_DELETE_MODE=soft
 ```
 
+### 5. Notification & Audio Settings
+
+Granularly configure how users are alerted to new activity:
+
+```dotenv
+# --- Email Notifications ---
+# Comma-separated list of emails for new ticket alerts
+SIMPLE_CHAT_NOTIFY_EMAILS=support@example.com,admin@example.com
+# Send an email notification for EVERY message received (Client <=> Support)
+SIMPLE_CHAT_NOTIFY_EACH_MESSAGE=true
+
+# --- Desktop Sound Notifications ---
+# Enable/disable audio alerts in the browser
+SIMPLE_CHAT_NOTIFY_SOUND=true
+# URL to the notification sound file
+SIMPLE_CHAT_NOTIFY_SOUND_URL="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"
+# Play mode: "inactive" (only when window is hidden/blurred) or "always"
+SIMPLE_CHAT_NOTIFY_SOUND_MODE=inactive
+```
+
 ---
 
 ## Overriding Views and Customization

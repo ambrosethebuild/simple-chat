@@ -90,10 +90,24 @@
             </div>
         @endif
 
-        <!-- Messages -->
         <div class="flex-1 overflow-y-auto scroll-smooth space-y-4 py-4 px-2 border-l border-gray-200 border-r"
             id="sc-messages-container">
+            @php $lastDate = null; @endphp
             @forelse($messages as $message)
+                @php
+                    $createdAt = \Carbon\Carbon::parse($message->created_at);
+                    $messageDate = $createdAt->format('Y-m-d');
+                    $displayDate = $createdAt->isToday() ? 'Today' : ($createdAt->isYesterday() ? 'Yesterday' : $createdAt->format('M d, Y'));
+                @endphp
+
+                @if($lastDate !== $messageDate)
+                    <div class="flex justify-center my-4 sticky top-0 z-10 date-indicator" data-date="{{ $messageDate }}">
+                        <span class="px-3 py-1 bg-gray-100/80 backdrop-blur-sm text-gray-500 text-xs rounded-full shadow-sm border border-gray-200">
+                            {{ $displayDate }}
+                        </span>
+                    </div>
+                    @php $lastDate = $messageDate; @endphp
+                @endif
                 @include('simple-chat::components.message-item', ['message' => $message])
             @empty
                 @include('simple-chat::components.empty-messages')
@@ -356,6 +370,7 @@
         const chatConfig = @json($chatConfig);
 
         let knownIds = new Set();
+        let lastAppendedDate = "{{ $lastDate }}";
 
         // Initialize known IDs
         document.querySelectorAll('.message-item').forEach(el => {
@@ -501,10 +516,41 @@
             }
         }
 
+        function playNotificationSound() {
+            if (chatConfig.sound && chatConfig.sound.enabled && chatConfig.sound.url) {
+                const audio = new Audio(chatConfig.sound.url);
+                audio.play().catch(e => console.log('Sound play blocked by browser. User interaction might be required first.', e));
+            }
+        }
+
         function appendMessage(msg) {
             // Normalize properties (Appwrite might use different keys, but we assume Model-like structure)
             const senderId = msg.sender_id;
             const isMe = String(senderId) === String(currentUserId);
+
+            // Play sound if message is not from me based on mode
+            if (!isMe) {
+                const playMode = chatConfig.sound ? chatConfig.sound.play_mode : 'inactive';
+                if (playMode === 'always' || (document.hidden || !document.hasFocus())) {
+                    playNotificationSound();
+                }
+            }
+
+            const date = new Date(msg.created_at || new Date());
+            const msgDateStr = date.toISOString().split('T')[0];
+
+            if (msgDateStr !== lastAppendedDate) {
+                const day = date.toDateString() === new Date().toDateString() ? 'Today' : 
+                          (date.toDateString() === new Date(Date.now() - 86400000).toDateString() ? 'Yesterday' :
+                           date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }));
+
+                const dateDiv = document.createElement('div');
+                dateDiv.className = "flex justify-center my-4 sticky top-0 z-10 date-indicator";
+                dateDiv.dataset.date = msgDateStr;
+                dateDiv.innerHTML = `<span class="px-3 py-1 bg-gray-100/80 backdrop-blur-sm text-gray-500 text-xs rounded-full shadow-sm border border-gray-200">${day}</span>`;
+                container.appendChild(dateDiv);
+                lastAppendedDate = msgDateStr;
+            }
 
             const div = document.createElement('div');
             div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} message-item`;

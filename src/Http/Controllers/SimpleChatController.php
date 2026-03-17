@@ -217,6 +217,12 @@ class SimpleChatController extends Controller
             $chatConfig['table'] = $driverConfig['table_messages'] ?? 'messages';
         }
 
+        $chatConfig['sound'] = [
+            'enabled' => config('simple-chat.notifications.sound.enabled', true),
+            'url' => config('simple-chat.notifications.sound.url'),
+            'play_mode' => config('simple-chat.notifications.sound.play_mode', 'inactive'),
+        ];
+
         $mode = config('simple-chat.mode', 'direct');
         $canReply = true;
 
@@ -307,6 +313,11 @@ class SimpleChatController extends Controller
         $messages = SimpleChat::getMessages($id, 2);
         if ($messages->count() === 1) {
             SendNewConversationNotificationJob::dispatch($id, $request->content);
+        }
+
+        // Send notification for EACH message if enabled
+        if (config('simple-chat.notifications.each_message.enabled')) {
+            \SimpleChat\Jobs\SendNewMessageNotificationJob::dispatch($id, auth()->id(), $request->content);
         }
 
         return back();

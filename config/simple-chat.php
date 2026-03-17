@@ -89,6 +89,16 @@ return [
     */
     'notifications' => [
         'email_addresses' => env('SIMPLE_CHAT_NOTIFY_EMAILS', ''),
+        'each_message' => [
+            'enabled' => env('SIMPLE_CHAT_NOTIFY_EACH_MESSAGE', false),
+            // if from user, send to support team (config('simple-chat.notifications.email_addresses'))
+            // if from support team, send to client (conversation creator)
+        ],
+        'sound' => [
+            'enabled' => env('SIMPLE_CHAT_NOTIFY_SOUND', true),
+            'url' => env('SIMPLE_CHAT_NOTIFY_SOUND_URL', 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3'),
+            'play_mode' => env('SIMPLE_CHAT_NOTIFY_SOUND_MODE', 'inactive'), // 'always' or 'inactive'
+        ],
     ],
 
     /*
