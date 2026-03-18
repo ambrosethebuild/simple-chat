@@ -94,6 +94,11 @@ return [
             // if from user, send to support team (config('simple-chat.notifications.email_addresses'))
             // if from support team, send to client (conversation creator)
         ],
+
+        // Minimum number of minutes that must pass before another notification
+        // email is sent for the same conversation. Prevents email flooding in
+        // very active chats. Set to 0 to disable throttling entirely.
+        'email_throttle_minutes' => env('SIMPLE_CHAT_EMAIL_THROTTLE', 5),
         'sound' => [
             'enabled' => env('SIMPLE_CHAT_NOTIFY_SOUND', true),
             'url' => env('SIMPLE_CHAT_NOTIFY_SOUND_URL', 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3'),

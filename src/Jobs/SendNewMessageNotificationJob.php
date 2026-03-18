@@ -7,6 +7,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Mail;
 use SimpleChat\Mail\NewMessageMail;
 use SimpleChat\Models\Conversation;
@@ -36,6 +37,17 @@ class SendNewMessageNotificationJob implements ShouldQueue
         $participants = $conversation->participants;
         if (empty($participants)) {
             return;
+        }
+
+        // Email throttle: skip if an email was already sent for this conversation
+        // within the configured window to prevent flooding in active chats.
+        $throttleMinutes = (int) config('simple-chat.notifications.email_throttle_minutes', 5);
+        if ($throttleMinutes > 0) {
+            $cacheKey = 'simple-chat.email-throttle.' . $this->conversationId;
+            if (Cache::has($cacheKey)) {
+                return;
+            }
+            Cache::put($cacheKey, true, now()->addMinutes($throttleMinutes));
         }
 
         $creatorId = (string) $participants[0];
