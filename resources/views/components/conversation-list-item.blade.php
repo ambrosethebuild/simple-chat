@@ -18,16 +18,16 @@
                     <div class="ml-4 flex-1 min-w-0">
                         <p
                             class="text-sm font-semibold {{ config('simple-chat.theme.primary_text', 'text-indigo-600') }} truncate">
-                            Conversation #{{ Str::limit($conversation->id, 8) }}
+                            {{ __('simple-chat::messages.labels.conversation') }} #{{ Str::limit($conversation->id, 8) }}
                         </p>
                         @if(config('simple-chat.mode') === 'support')
                             <div class="mt-1 flex flex-col text-sm text-gray-500 truncate">
-                                {{ $conversation->other_users->first()->name ?? 'Unassigned' }}
+                                {{ $conversation->other_users->first()->name ?? __('simple-chat::messages.status.unassigned') }}
                             </div>
                         @else
                             <div class="mt-1 flex flex-col">
                                 <p class="text-sm text-gray-500 truncate">
-                                    <span class="font-medium text-gray-700">Participants:</span>
+                                    <span class="font-medium text-gray-700">{{ __('simple-chat::messages.labels.participants') }}:</span>
                                     {{ $conversation->participant_names }}
                                 </p>
                             </div>
@@ -45,7 +45,7 @@
                                 @csrf
                                 <button type="submit"
                                     class="px-3 py-1.5 inline-flex text-xs leading-5 font-semibold rounded-md shadow-sm text-white {{ config('simple-chat.theme.primary_color', 'bg-indigo-600') }} {{ config('simple-chat.theme.primary_hover', 'hover:bg-indigo-700') }} focus:outline-none focus:ring-2 focus:ring-offset-2 {{ config('simple-chat.theme.primary_ring', 'focus:ring-indigo-500') }} transition-colors">
-                                    Assign to Me
+                                    {{ __('simple-chat::messages.actions.assign_to_me') }}
                                 </button>
                             </form>
                         @endif
@@ -55,17 +55,17 @@
                         @if ($conversation->trashed())
                             <p
                                 class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full bg-gray-100 text-gray-800">
-                                Deleted
+                                {{ __('simple-chat::messages.status.deleted_badge') }}
                             </p>
                         @elseif ($conversation->status === 'closed')
                             <p
                                 class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full bg-red-100 text-red-800">
-                                Closed
+                                {{ __('simple-chat::messages.status.closed_badge') }}
                             </p>
                         @else
                             <p
                                 class="px-2.5 py-0.5 inline-flex text-xs leading-5 font-medium rounded-full bg-green-100 text-green-800">
-                                {{ ucfirst($conversation->status ?? 'Open') }}
+                                {{ ucfirst($conversation->status ?? __('simple-chat::messages.status.open')) }}
                             </p>
                         @endif
                         <p class="text-xs text-gray-400 whitespace-nowrap flex items-center">

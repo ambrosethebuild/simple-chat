@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Conversation Activity</title>
+    <title>{{ __('simple-chat::messages.emails.new_conversation.title') }}</title>
     <style>
         body {
             margin: 0;
@@ -103,25 +103,22 @@
                     <table class="main" cellpadding="0" cellspacing="0" border="0">
                         <tr>
                             <td class="header">
-                                <h1>New Conversation Activity</h1>
+                                <h1>{{ __('simple-chat::messages.emails.new_conversation.title') }}</h1>
                             </td>
                         </tr>
                         <tr>
                             <td class="content">
-                                <p>A new conversation (ID: <strong>{{ $conversationId }}</strong>) has been opened or
-                                    received its first message.</p>
+                                <p>{!! __('simple-chat::messages.emails.new_conversation.body', ['id' => '<strong>' . $conversationId . '</strong>']) !!}</p>
 
                                 @if($messageContent)
                                     <div class="message-box">
-                                        <p style="font-size: 14px; color: #6b7280; margin-bottom: 8px;"><strong>First
-                                                Message:</strong></p>
+                                        <p style="font-size: 14px; color: #6b7280; margin-bottom: 8px;"><strong>{{ __('simple-chat::messages.labels.first_message') }}</strong></p>
                                         <p>{!! nl2br(e($messageContent)) !!}</p>
                                     </div>
                                 @endif
 
                                 <div class="button-wrap">
-                                    <a href="{{ route('simple-chat.show', $conversationId) }}" class="button">View
-                                        Conversation</a>
+                                    <a href="{{ route('simple-chat.show', $conversationId) }}" class="button">{{ __('simple-chat::messages.emails.new_conversation.button') }}</a>
                                 </div>
                             </td>
                         </tr>
@@ -130,7 +127,7 @@
                         style="max-width: 600px; margin: 0 auto;">
                         <tr>
                             <td class="footer">
-                                <p style="margin: 0;">&copy; {{ date('Y') }} Support Team. All rights reserved.</p>
+                                <p style="margin: 0;">&copy; {{ __('simple-chat::messages.emails.footer', ['year' => date('Y')]) }}</p>
                             </td>
                         </tr>
                     </table>

@@ -117,8 +117,10 @@ SIMPLE_CHAT_NOTIFY_EACH_MESSAGE=true
 # --- Desktop Sound Notifications ---
 # Enable/disable audio alerts in the browser
 SIMPLE_CHAT_NOTIFY_SOUND=true
-# URL to the notification sound file
+# URL to the notification sound file (remote URL or path relative to public/ if local)
 SIMPLE_CHAT_NOTIFY_SOUND_URL="https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3"
+# URL type: "url" (remote) or "local" (asset helper)
+SIMPLE_CHAT_NOTIFY_SOUND_TYPE=url
 # Play mode: "inactive" (only when window is hidden/blurred) or "always"
 SIMPLE_CHAT_NOTIFY_SOUND_MODE=inactive
 ```

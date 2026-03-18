@@ -28,6 +28,7 @@ class SimpleChatServiceProvider extends ServiceProvider
     public function boot()
     {
         $this->loadViewsFrom(__DIR__ . '/../resources/views', 'simple-chat');
+        $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'simple-chat');
         $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
 
         if ($this->app->runningInConsole()) {
@@ -38,6 +39,10 @@ class SimpleChatServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../resources/views' => resource_path('views/vendor/simple-chat'),
             ], 'simple-chat-views');
+
+            $this->publishes([
+                __DIR__ . '/../resources/lang' => resource_path('lang/vendor/simple-chat'),
+            ], 'simple-chat-translations');
 
             $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         }

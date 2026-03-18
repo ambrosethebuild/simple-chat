@@ -217,17 +217,23 @@ class SimpleChatController extends Controller
             $chatConfig['table'] = $driverConfig['table_messages'] ?? 'messages';
         }
 
+        $soundUrl = config('simple-chat.notifications.sound.url');
+        if (config('simple-chat.notifications.sound.url_type') === 'local') {
+            $soundUrl = asset($soundUrl);
+        }
+
         $chatConfig['sound'] = [
             'enabled' => config('simple-chat.notifications.sound.enabled', true),
-            'url' => config('simple-chat.notifications.sound.url'),
+            'url' => $soundUrl,
             'play_mode' => config('simple-chat.notifications.sound.play_mode', 'inactive'),
         ];
 
+        $chatConfig['theme'] = config('simple-chat.theme');
+        $chatConfig['editor'] = config('simple-chat.editor', 'textarea');
+
         $mode = config('simple-chat.mode', 'direct');
         $canReply = true;
-
-        // Pass editor choice down
-        $editor = config('simple-chat.editor', 'textarea');
+        $editor = $chatConfig['editor'];
 
         if ($mode === 'support' && auth()->check()) {
             $user = auth()->user();

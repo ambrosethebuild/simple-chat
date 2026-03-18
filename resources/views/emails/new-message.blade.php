@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>New Message</title>
+    <title>{{ __('simple-chat::messages.emails.new_message.title') }}</title>
     <style>
         body {
             margin: 0;
@@ -103,19 +103,19 @@
                     <table class="main" cellpadding="0" cellspacing="0" border="0">
                         <tr>
                             <td class="header">
-                                <h1>New Message Available</h1>
+                                <h1>{{ __('simple-chat::messages.emails.new_message.title') }}</h1>
                             </td>
                         </tr>
                         <tr>
                             <td class="content">
-                                <p>You have received a new message from <strong>{{ $sender->name ?? 'User' }}</strong> in conversation #{{ substr($conversation->id, 0, 8) }}.</p>
+                                <p>{!! __('simple-chat::messages.emails.new_message.body', ['sender' => '<strong>' . e($sender->name ?? 'User') . '</strong>', 'id' => substr($conversation->id, 0, 8)]) !!}</p>
 
                                 <div class="message-box">
                                     <p>{!! nl2br(e($messageContent)) !!}</p>
                                 </div>
 
                                 <div class="button-wrap">
-                                    <a href="{{ route('simple-chat.show', $conversation->id) }}" class="button">View Reply</a>
+                                    <a href="{{ route('simple-chat.show', $conversation->id) }}" class="button">{{ __('simple-chat::messages.emails.new_message.button') }}</a>
                                 </div>
                             </td>
                         </tr>
@@ -124,7 +124,7 @@
                         style="max-width: 600px; margin: 0 auto;">
                         <tr>
                             <td class="footer">
-                                <p style="margin: 0;">&copy; {{ date('Y') }} Support Team. All rights reserved.</p>
+                                <p style="margin: 0;">&copy; {{ __('simple-chat::messages.emails.footer', ['year' => date('Y')]) }}</p>
                             </td>
                         </tr>
                     </table>

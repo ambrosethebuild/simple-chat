@@ -1,6 +1,6 @@
 @extends(config('simple-chat.layout', 'layouts.app'))
 
-@section('title', config('simple-chat.titles.show', 'Conversation') . ' #' . substr($conversation->id, 0, 8))
+@section('title', config('simple-chat.titles.show', __('simple-chat::messages.titles.show')) . ' #' . substr($conversation->id, 0, 8))
 @section(config('simple-chat.section', 'content'))
     <div class="max-w-4xl mx-auto py-4 sm:px-6 lg:px-8 flex flex-col" style="height: calc(100vh - 100px);">
         <!-- Header -->
@@ -14,7 +14,7 @@
                     </svg>
                 </a>
                 <h1 class="text-lg font-medium text-gray-900">
-                    {!! config('simple-chat.titles.show', 'Conversation') !!} #{{ substr($conversation->id, 0, 8) }}
+                    {!! config('simple-chat.titles.show', __('simple-chat::messages.titles.show')) !!} #{{ substr($conversation->id, 0, 8) }}
                 </h1>
             </div>
             <div>
@@ -25,7 +25,7 @@
                             <button type="button"
                                 class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
                                 onclick="document.getElementById('sc-close-modal').classList.remove('hidden')">
-                                Close Ticket
+                                {{ __('simple-chat::messages.actions.close_ticket') }}
                             </button>
                         @endcan
                     @endif
@@ -34,18 +34,18 @@
                             <button type="button"
                                 class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                                 onclick="document.getElementById('sc-restore-modal').classList.remove('hidden')">
-                                Restore Ticket
+                                {{ __('simple-chat::messages.actions.restore_ticket') }}
                             </button>
                             <button type="button"
                                 class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                                 onclick="document.getElementById('sc-delete-modal').classList.remove('hidden')">
-                                Permanent Delete
+                                {{ __('simple-chat::messages.actions.permanent_delete') }}
                             </button>
                         @else
                             <button type="button"
                                 class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
                                 onclick="document.getElementById('sc-delete-modal').classList.remove('hidden')">
-                                Delete Ticket
+                                {{ __('simple-chat::messages.actions.delete_ticket') }}
                             </button>
                         @endif
                     @endif
@@ -83,8 +83,8 @@
                     @endforeach
                 @else
                     <div class="text-center text-gray-500 italic w-full">
-                        <p>Unassigned</p>
-                        <p class="text-sm text-gray-400">No agent has been assigned to this conversation yet</p>
+                        <p>{{ __('simple-chat::messages.status.unassigned') }}</p>
+                        <p class="text-sm text-gray-400">{{ __('simple-chat::messages.status.unassigned_desc') }}</p>
                     </div>
                 @endif
             </div>
@@ -97,12 +97,13 @@
                 @php
                     $createdAt = \Carbon\Carbon::parse($message->created_at);
                     $messageDate = $createdAt->format('Y-m-d');
-                    $displayDate = $createdAt->isToday() ? 'Today' : ($createdAt->isYesterday() ? 'Yesterday' : $createdAt->format('M d, Y'));
+                    $displayDate = $createdAt->isToday() ? __('simple-chat::messages.date.today') : ($createdAt->isYesterday() ? __('simple-chat::messages.date.yesterday') : $createdAt->format('M j, Y'));
                 @endphp
 
                 @if($lastDate !== $messageDate)
                     <div class="flex justify-center my-4 sticky top-0 z-10 date-indicator" data-date="{{ $messageDate }}">
-                        <span class="px-3 py-1 bg-gray-100/80 backdrop-blur-sm text-gray-500 text-xs rounded-full shadow-sm border border-gray-200">
+                        <span
+                            class="px-3 py-1 bg-gray-100/80 backdrop-blur-sm text-gray-500 text-xs rounded-full shadow-sm border border-gray-200">
                             {{ $displayDate }}
                         </span>
                     </div>
@@ -119,31 +120,55 @@
             @if(isset($canReply) && !$canReply)
                 <div class="text-center text-sm text-gray-500 py-2">
                     @if($conversation->trashed())
-                        This conversation has been deleted.
+                        <div class="bg-gray-50 px-4 py-12 sm:px-6 flex justify-center items-center">
+                            <p class="text-gray-500 font-medium italic flex items-center">
+                                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                {{ __('simple-chat::messages.status.deleted') }}
+                            </p>
+                        </div>
                     @elseif($conversation->status === 'closed')
-                        This conversation is closed.
+                        <div class="bg-gray-50 px-4 py-12 sm:px-6 flex justify-center items-center">
+                            <p class="text-gray-500 font-medium italic flex items-center">
+                                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                {{ __('simple-chat::messages.status.closed') }}
+                            </p>
+                        </div>
                     @else
-                        You do not have permission to reply to this conversation.
+                        <div class="bg-gray-50 px-4 py-12 sm:px-6 flex justify-center items-center">
+                            <p class="text-gray-500 font-medium italic flex items-center text-center">
+                                <svg class="h-5 w-5 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                                {{ __('simple-chat::messages.status.no_permission') }}
+                            </p>
+                        </div>
                     @endif
                 </div>
             @else
                 <form id="sc-message-form" class="flex space-x-3" onsubmit="sendMessage(event)">
-                    @if(isset($editor) && $editor === 'wysiwyg')
-                        <!-- Quill WYSIWYG Editor -->
-                        <div class="flex-1 border border-gray-300 rounded-md overflow-hidden bg-white">
-                            <div id="sc-quill-editor" style="min-height: 48px; max-height: 150px; overflow-y: auto;"></div>
+                    <div class="flex items-center space-x-2">
+                        <div class="flex-1 bg-gray-50 rounded-lg p-2 flex items-center">
+                            @if(isset($editor) && $editor === 'wysiwyg')
+                                <div id="sc-quill-editor" class="flex-1 min-h-[40px] max-h-[150px] overflow-y-auto"></div>
+                                <input type="hidden" name="content" id="sc-content">
+                            @else
+                                <textarea name="content" id="sc-content" rows="1"
+                                    class="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 placeholder-gray-500 resize-none py-1 block w-full sm:text-sm"
+                                    placeholder="{{ __('simple-chat::messages.placeholders.type_message') }}" required></textarea>
+                            @endif
                         </div>
-                        <input type="hidden" id="sc-content" name="content">
-                    @else
-                        <!-- Auto-expanding Textarea -->
-                        <textarea id="sc-content" name="content" rows="3" style="max-height: 120px;"
-                            class="flex-1 resize-y {{ config('simple-chat.theme.primary_ring', 'focus:ring-indigo-500') }} {{ config('simple-chat.theme.primary_border', 'focus:border-indigo-500') }} block w-full rounded-md sm:text-sm border-gray-300 p-2 border"
-                            placeholder="Type a message..." required autocomplete="off"></textarea>
-                    @endif
-                    <button type="submit"
-                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white {{ config('simple-chat.theme.primary_color', 'bg-indigo-600') }} {{ config('simple-chat.theme.primary_hover', 'hover:bg-indigo-700') }} focus:outline-none focus:ring-2 focus:ring-offset-2 {{ config('simple-chat.theme.primary_ring', 'focus:ring-indigo-500') }}">
-                        Send
-                    </button>
+                        <button type="submit"
+                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white {{ config('simple-chat.theme.primary_color', 'bg-indigo-600') }} {{ config('simple-chat.theme.primary_hover', 'hover:bg-indigo-700') }} focus:outline-none focus:ring-2 focus:ring-offset-2 {{ config('simple-chat.theme.primary_ring', 'focus:ring-indigo-500') }} transition-colors">
+                            {{ __('simple-chat::messages.actions.send') }}
+                        </button>
+                    </div>
                 </form>
             @endif
         </div>
@@ -171,11 +196,12 @@
                         </svg>
                     </div>
                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">Close Conversation</h3>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                            {{ __('simple-chat::messages.modals.close_title') }}
+                        </h3>
                         <div class="mt-2">
                             <p class="text-sm text-gray-500">
-                                Are you sure you want to close this ticket? You will no longer be able to send messages once
-                                closed. This action cannot be undone.
+                                {{ __('simple-chat::messages.modals.close_desc') }}
                             </p>
                         </div>
                     </div>
@@ -185,13 +211,13 @@
                         @csrf
                         <button type="submit"
                             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            Confirm Close
+                            {{ __('simple-chat::messages.actions.confirm_close') }}
                         </button>
                     </form>
                     <button type="button"
                         class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
                         onclick="document.getElementById('sc-close-modal').classList.add('hidden')">
-                        Cancel
+                        {{ __('simple-chat::messages.actions.cancel') }}
                     </button>
                 </div>
             </div>
@@ -220,15 +246,18 @@
                     </div>
                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                         <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title-delete">
-                            @if($conversation->trashed()) Permanent Delete Ticket @else Delete Ticket @endif
+                            @if($conversation->trashed())
+                                {{ __('simple-chat::messages.modals.delete_permanent_title') }}
+                            @else
+                                {{ __('simple-chat::messages.modals.delete_title') }}
+                            @endif
                         </h3>
                         <div class="mt-2">
                             <p class="text-sm text-gray-500">
                                 @if($conversation->trashed())
-                                    Are you sure you want to permanently delete this ticket? This action cannot be undone.
+                                    {{ __('simple-chat::messages.modals.delete_permanent_desc') }}
                                 @else
-                                    Are you sure you want to delete this ticket? This action may be permanent based on
-                                    configuration.
+                                    {{ __('simple-chat::messages.modals.delete_desc') }}
                                 @endif
                             </p>
                         </div>
@@ -240,13 +269,13 @@
                         @method('DELETE')
                         <button type="submit"
                             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            Confirm Delete
+                            {{ __('simple-chat::messages.actions.confirm_delete') }}
                         </button>
                     </form>
                     <button type="button"
                         class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
                         onclick="document.getElementById('sc-delete-modal').classList.add('hidden')">
-                        Cancel
+                        {{ __('simple-chat::messages.actions.cancel') }}
                     </button>
                 </div>
             </div>
@@ -274,10 +303,10 @@
                         </svg>
                     </div>
                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title-restore">Restore Ticket</h3>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title-restore">{{ __('simple-chat::messages.modals.restore_title') }}</h3>
                         <div class="mt-2">
                             <p class="text-sm text-gray-500">
-                                Are you sure you want to restore this ticket?
+                                {{ __('simple-chat::messages.modals.restore_desc') }}
                             </p>
                         </div>
                     </div>
@@ -287,18 +316,38 @@
                         @csrf
                         <button type="submit"
                             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
-                            Confirm Restore
+                            {{ __('simple-chat::messages.actions.confirm_restore') }}
                         </button>
                     </form>
                     <button type="button"
                         class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
                         onclick="document.getElementById('sc-restore-modal').classList.add('hidden')">
-                        Cancel
+                        {{ __('simple-chat::messages.actions.cancel') }}
                     </button>
                 </div>
             </div>
         </div>
     </div>
+
+    <!-- Templates for Realtime Appending -->
+    <template id="sc-template-me">
+        <div class="flex justify-end message-item">
+            <div
+                class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm {{ config('simple-chat.theme.primary_color', 'bg-indigo-600') }} text-white rounded-br-none">
+                <div class="sc-msg-content text-sm"></div>
+                <p class="sc-msg-time text-xs mt-1 text-indigo-200"></p>
+            </div>
+        </div>
+    </template>
+
+    <template id="sc-template-other">
+        <div class="flex justify-start message-item">
+            <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm bg-white text-gray-900 rounded-bl-none">
+                <div class="sc-msg-content text-sm"></div>
+                <p class="sc-msg-time text-xs mt-1 text-gray-400"></p>
+            </div>
+        </div>
+    </template>
 
     @if(isset($editor) && $editor === 'wysiwyg')
         <link href="https://cdn.quilljs.com/1.3.6/quill.snow.css" rel="stylesheet">
@@ -332,11 +381,19 @@
         const form = document.getElementById('sc-message-form');
         const input = document.getElementById('sc-content');
         let quill = null;
+        const useWysiwyg = {{ isset($editor) && $editor === 'wysiwyg' ? 'true' : 'false' }};
 
-        @if(isset($editor) && $editor === 'wysiwyg')
+        const translations = {
+            today: "{{ __('simple-chat::messages.date.today') }}",
+            yesterday: "{{ __('simple-chat::messages.date.yesterday') }}",
+            failedToSend: "{{ __('simple-chat::messages.alerts.failed_to_send') }}",
+            errorSending: "{{ __('simple-chat::messages.alerts.error_sending') }}",
+        };
+
+        @if(useWysiwyg)
             quill = new Quill('#sc-quill-editor', {
                 theme: 'snow',
-                placeholder: 'Type a message...',
+                placeholder: '{{ __('simple-chat::messages.placeholders.type_message') }}',
                 modules: {
                     toolbar: [
                         ['bold', 'italic', 'underline', 'strike'],
@@ -350,7 +407,7 @@
             quill.on('text-change', function () {
                 input.value = quill.root.innerHTML === '<p><br></p>' ? '' : quill.root.innerHTML;
             });
-        @else
+        } else {
             // Simple textarea submit on Enter logic (prevent shift+enter)
             input.addEventListener('keydown', function (e) {
                 if (e.key === 'Enter' && !e.shiftKey) {
@@ -360,9 +417,9 @@
                     }
                 }
             });
-        @endif
+        }
 
-                                                                                            const conversationId = "{{ $conversation->id }}";
+        const conversationId = "{{ $conversation->id }}";
         const currentUserId = "{{ auth()->id() }}";
         const fetchUrl = "{{ route('simple-chat.messages.fetch', $conversation->id) }}";
         const storeUrl = "{{ route('simple-chat.messages.store', $conversation->id) }}";
@@ -485,11 +542,11 @@
                         fetchMessages();
                     }
                 } else {
-                    alert('Failed to send message');
+                    alert(translations.failedToSend);
                 }
             } catch (error) {
                 console.error('Error:', error);
-                alert('Error sending message');
+                alert(translations.errorSending);
             }
         }
 
@@ -524,11 +581,11 @@
         }
 
         function appendMessage(msg) {
-            // Normalize properties (Appwrite might use different keys, but we assume Model-like structure)
+            // Normalize properties
             const senderId = msg.sender_id;
             const isMe = String(senderId) === String(currentUserId);
 
-            // Play sound if message is not from me based on mode
+            // Play sound if message is not from me
             if (!isMe) {
                 const playMode = chatConfig.sound ? chatConfig.sound.play_mode : 'inactive';
                 if (playMode === 'always' || (document.hidden || !document.hasFocus())) {
@@ -540,9 +597,9 @@
             const msgDateStr = date.toISOString().split('T')[0];
 
             if (msgDateStr !== lastAppendedDate) {
-                const day = date.toDateString() === new Date().toDateString() ? 'Today' : 
-                          (date.toDateString() === new Date(Date.now() - 86400000).toDateString() ? 'Yesterday' :
-                           date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }));
+                const day = date.toDateString() === new Date().toDateString() ? translations.today :
+                    (date.toDateString() === new Date(Date.now() - 86400000).toDateString() ? translations.yesterday :
+                        date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }));
 
                 const dateDiv = document.createElement('div');
                 dateDiv.className = "flex justify-center my-4 sticky top-0 z-10 date-indicator";
@@ -552,25 +609,29 @@
                 lastAppendedDate = msgDateStr;
             }
 
-            const div = document.createElement('div');
-            div.className = `flex ${isMe ? 'justify-end' : 'justify-start'} message-item`;
-            div.dataset.id = msg.id;
+            const template = document.getElementById(isMe ? 'sc-template-me' : 'sc-template-other');
+            const clone = template.content.cloneNode(true);
+            const msgItem = clone.querySelector('.message-item');
+            msgItem.dataset.id = msg.id;
 
             const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            clone.querySelector('.sc-msg-time').textContent = time;
 
-            div.innerHTML = `
-                                                                                                                                                                                                                                                                        <div class="max-w-xs lg:max-w-md px-4 py-2 rounded-lg shadow-sm ${isMe ? '${chatConfig.theme.primary_color || "bg-indigo-600"} text-white rounded-br-none' : 'bg-white text-gray-900 rounded-bl-none'}">
-                                                                                                                                                                                                                                                                            <p class="text-sm">${escapeHtml(msg.content)}</p>
-                                                                                                                                                                                                                                                                            <p class="text-xs mt-1 ${isMe ? 'text-white/70' : 'text-gray-400'}">
-                                                                                                                                                                                                                                                                                ${time}
-                                                                                                                                                                                                                                                                            </p>
-                                                                                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                                                                                    `;
+            const contentEl = clone.querySelector('.sc-msg-content');
+            if (chatConfig.editor === 'wysiwyg') {
+                contentEl.innerHTML = msg.content;
+                contentEl.classList.add('prose', 'prose-sm', 'max-w-none');
+                if (isMe) contentEl.classList.add('text-white');
+            } else {
+                const p = document.createElement('p');
+                p.textContent = msg.content;
+                contentEl.appendChild(p);
+            }
 
             const emptyState = document.getElementById('sc-empty-state');
             if (emptyState) emptyState.remove();
 
-            container.appendChild(div);
+            container.appendChild(clone);
         }
 
         function escapeHtml(text) {

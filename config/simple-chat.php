@@ -97,6 +97,7 @@ return [
         'sound' => [
             'enabled' => env('SIMPLE_CHAT_NOTIFY_SOUND', true),
             'url' => env('SIMPLE_CHAT_NOTIFY_SOUND_URL', 'https://assets.mixkit.co/active_storage/sfx/2354/2354-preview.mp3'),
+            'url_type' => env('SIMPLE_CHAT_NOTIFY_SOUND_TYPE', 'url'), // 'url' or 'local'
             'play_mode' => env('SIMPLE_CHAT_NOTIFY_SOUND_MODE', 'inactive'), // 'always' or 'inactive'
         ],
     ],

@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Agent Assigned</title>
+    <title>{{ __('simple-chat::messages.emails.agent_assigned.title') }}</title>
     <style>
         body {
             margin: 0;
@@ -95,7 +95,7 @@
                     <table class="main" cellpadding="0" cellspacing="0" border="0">
                         <tr>
                             <td class="header">
-                                <h1>Support Ticket Update</h1>
+                                <h1>{{ __('simple-chat::messages.emails.agent_assigned.title') }}</h1>
                             </td>
                         </tr>
                         <tr>
@@ -109,14 +109,11 @@
                                         </path>
                                     </svg>
                                 </div>
-                                <p style="text-align: center; font-size: 18px; color: #111827;">An agent has been
-                                    assigned to your support ticket.</p>
-                                <p style="text-align: center; margin-top: 8px;">They are currently reviewing your
-                                    request and will be in touch shortly.</p>
+                                <p style="text-align: center; font-size: 18px; color: #111827;">{{ __('simple-chat::messages.emails.agent_assigned.body') }}</p>
+                                <p style="text-align: center; margin-top: 8px;">{{ __('simple-chat::messages.emails.agent_assigned.sub_body') }}</p>
 
                                 <div class="button-wrap">
-                                    <a href="{{ route('simple-chat.show', $conversationId) }}" class="button">View
-                                        Ticket Summary</a>
+                                    <a href="{{ route('simple-chat.show', $conversationId) }}" class="button">{{ __('simple-chat::messages.emails.agent_assigned.button') }}</a>
                                 </div>
                             </td>
                         </tr>
@@ -125,7 +122,7 @@
                         style="max-width: 600px; margin: 0 auto;">
                         <tr>
                             <td class="footer">
-                                <p style="margin: 0;">&copy; {{ date('Y') }} Support Team. All rights reserved.</p>
+                                <p style="margin: 0;">&copy; {{ __('simple-chat::messages.emails.footer', ['year' => date('Y')]) }}</p>
                             </td>
                         </tr>
                     </table>
