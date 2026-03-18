@@ -2,6 +2,7 @@
 
 use Illuminate\Support\Facades\Route;
 use SimpleChat\Http\Controllers\SimpleChatController;
+use SimpleChat\Http\Controllers\SimpleChatDashboardController;
 
 Route::group([
     'prefix' => config('simple-chat.route_prefix', 'chat'),
@@ -9,7 +10,7 @@ Route::group([
     'as' => 'simple-chat.',
 ], function () {
     Route::get('/', [SimpleChatController::class, 'index'])->name('index');
-    Route::get('/dashboard', [SimpleChatController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [SimpleChatDashboardController::class, 'index'])->name('dashboard');
     Route::get('/trashed', [SimpleChatController::class, 'trashed'])->name('trashed');
     Route::get('/create', [SimpleChatController::class, 'create'])->name('create');
     Route::post('/start', [SimpleChatController::class, 'start'])->name('start');
