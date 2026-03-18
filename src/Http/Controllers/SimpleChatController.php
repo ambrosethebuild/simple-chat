@@ -271,6 +271,67 @@ class SimpleChatController extends Controller
         return view('simple-chat::show', compact('conversation', 'messages', 'chatConfig', 'mode', 'canReply'));
     }
 
+    public function dashboard()
+    {
+        $mode = config('simple-chat.mode', 'direct');
+
+        if ($mode !== 'support' || !auth()->check()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $viewPerm = config('simple-chat.support.permissions.view_tickets', 'view-tickets');
+        if (!auth()->user()->can($viewPerm)) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $allConversations = Conversation::all();
+
+        $totalTickets     = $allConversations->count();
+        $openTickets      = $allConversations->where('status', '!=', 'closed')->count();
+        $closedTickets    = $allConversations->where('status', 'closed')->count();
+        $unassignedTickets = $allConversations->filter(function ($conv) {
+            $parts = is_array($conv->participants)
+                ? $conv->participants
+                : json_decode($conv->participants ?? '[]', true);
+            return count($parts ?? []) <= 1 && $conv->status !== 'closed';
+        })->count();
+
+        // Build per-agent stats (all participants except index-0 creator are agents)
+        $agentStats = [];
+        foreach ($allConversations as $conv) {
+            $parts = is_array($conv->participants)
+                ? $conv->participants
+                : json_decode($conv->participants ?? '[]', true);
+
+            $agents = array_slice($parts ?? [], 1);
+
+            foreach ($agents as $agentId) {
+                $agentId = (string) $agentId;
+                if (!isset($agentStats[$agentId])) {
+                    $agentStats[$agentId] = ['total' => 0, 'open' => 0, 'closed' => 0, 'last_activity' => null];
+                }
+                $agentStats[$agentId]['total']++;
+                if ($conv->status === 'closed') {
+                    $agentStats[$agentId]['closed']++;
+                } else {
+                    $agentStats[$agentId]['open']++;
+                }
+                if (!$agentStats[$agentId]['last_activity'] || $conv->updated_at > $agentStats[$agentId]['last_activity']) {
+                    $agentStats[$agentId]['last_activity'] = $conv->updated_at;
+                }
+            }
+        }
+
+        $userClass = config('auth.providers.users.model', '\App\Models\User');
+        $agentIds  = array_keys($agentStats);
+        $agents    = $agentIds ? $userClass::whereIn('id', $agentIds)->get()->keyBy('id') : collect();
+
+        return view('simple-chat::dashboard', compact(
+            'totalTickets', 'openTickets', 'closedTickets', 'unassignedTickets',
+            'agentStats', 'agents'
+        ));
+    }
+
     public function fetchMessages($id)
     {
         $messages = SimpleChat::getMessages($id, 50)->reverse()->values();

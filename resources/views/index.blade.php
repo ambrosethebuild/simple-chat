@@ -7,6 +7,13 @@
             <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight">
                 {!! isset($showingTrashed) && $showingTrashed ? __('simple-chat::messages.titles.trashed') : config('simple-chat.titles.index', __('simple-chat::messages.titles.index')) !!}</h1>
             <div class="flex items-center space-x-4">
+                @if(config('simple-chat.mode') === 'support' && auth()->check() && auth()->user()->can(config('simple-chat.support.permissions.view_tickets', 'view-tickets')))
+                    <a href="{{ route('simple-chat.dashboard') }}"
+                       class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-gray-900">
+                        <x-tabler-layout-dashboard class="w-4 h-4" />
+                        {{ __('simple-chat::messages.dashboard.view_dashboard') }}
+                    </a>
+                @endif
                 @if(config('simple-chat.mode') === 'support' && auth()->check() && config('simple-chat.support.delete_mode', 'soft') === 'soft' && auth()->user()->can(config('simple-chat.support.permissions.view_deleted_tickets', 'view-deleted-tickets')))
                     @if(isset($showingTrashed) && $showingTrashed)
                         <a href="{{ route('simple-chat.index') }}" class="text-sm text-indigo-600 hover:text-indigo-900 font-medium">{{ __('simple-chat::messages.actions.view_active') }}</a>
