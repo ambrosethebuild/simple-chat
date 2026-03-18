@@ -153,8 +153,8 @@
                     @endif
                 </div>
             @else
-                <form id="sc-message-form" class="flex space-x-3" onsubmit="sendMessage(event)">
-                    <div class="flex items-center space-x-2">
+                <form id="sc-message-form" class="flex w-full" onsubmit="sendMessage(event)">
+                    <div class="flex items-center w-full space-x-2">
                         <div class="flex-1 bg-gray-50 rounded-lg p-2 flex items-center">
                             @if(isset($editor) && $editor === 'wysiwyg')
                                 <div id="sc-quill-editor" class="flex-1 min-h-[40px] max-h-[150px] overflow-y-auto"></div>
