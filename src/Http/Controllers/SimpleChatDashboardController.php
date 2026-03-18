@@ -39,16 +39,17 @@ class SimpleChatDashboardController extends Controller
         $deletedTickets = Conversation::onlyTrashed()->count();
 
         // Tickets opened per day — last 30 days (labels + counts for chart)
-        $ticketsPerDay = collect();
+        $ticketsPerDayArr = [];
         for ($i = 29; $i >= 0; $i--) {
-            $ticketsPerDay[now()->subDays($i)->format('Y-m-d')] = 0;
+            $ticketsPerDayArr[now()->subDays($i)->format('Y-m-d')] = 0;
         }
         foreach ($allConversations as $conv) {
             $date = $conv->created_at->format('Y-m-d');
-            if (isset($ticketsPerDay[$date])) {
-                $ticketsPerDay[$date]++;
+            if (array_key_exists($date, $ticketsPerDayArr)) {
+                $ticketsPerDayArr[$date]++;
             }
         }
+        $ticketsPerDay = collect($ticketsPerDayArr);
 
         // Recent conversations (last 5)
         $recentConversations = Conversation::latest('updated_at')->take(5)->get();
