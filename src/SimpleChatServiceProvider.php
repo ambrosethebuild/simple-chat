@@ -31,6 +31,10 @@ class SimpleChatServiceProvider extends ServiceProvider
         $this->loadTranslationsFrom(__DIR__ . '/../resources/lang', 'simple-chat');
         $this->loadRoutesFrom(__DIR__ . '/../routes/web.php');
 
+        if (config('simple-chat.broadcasting.enabled', false) && class_exists(\Illuminate\Broadcasting\BroadcastServiceProvider::class)) {
+            require __DIR__ . '/../routes/channels.php';
+        }
+
         if ($this->app->runningInConsole()) {
             $this->publishes([
                 __DIR__ . '/../config/simple-chat.php' => config_path('simple-chat.php'),
@@ -43,6 +47,10 @@ class SimpleChatServiceProvider extends ServiceProvider
             $this->publishes([
                 __DIR__ . '/../resources/lang' => resource_path('lang/vendor/simple-chat'),
             ], 'simple-chat-translations');
+
+            $this->publishes([
+                __DIR__ . '/../routes/channels.php' => base_path('routes/simple-chat-channels.php'),
+            ], 'simple-chat-channels');
 
             $this->loadMigrationsFrom(__DIR__ . '/../database/migrations');
         }

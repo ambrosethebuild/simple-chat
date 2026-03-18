@@ -7,6 +7,8 @@ use Illuminate\Routing\Controller;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Str;
 use SimpleChat\Facades\SimpleChat;
+use SimpleChat\Events\ConversationStarted;
+use SimpleChat\Events\MessageSent;
 use SimpleChat\Jobs\SendAgentAssignedNotificationJob;
 use SimpleChat\Jobs\SendNewConversationNotificationJob;
 use SimpleChat\Models\Conversation;
@@ -77,6 +79,10 @@ class SimpleChatController extends Controller
 
         // The driver will create the conversation if it doesn't exist
         $conversation = SimpleChat::getConversation($conversationId, $participants);
+
+        if (config('simple-chat.broadcasting.enabled', false) && $conversation->wasRecentlyCreated) {
+            event(new ConversationStarted($conversation, $mode));
+        }
 
         return redirect()->route('simple-chat.show', $conversationId);
     }
@@ -230,6 +236,10 @@ class SimpleChatController extends Controller
 
         $chatConfig['theme'] = config('simple-chat.theme');
         $chatConfig['editor'] = config('simple-chat.editor', 'textarea');
+        $chatConfig['broadcasting'] = [
+            'enabled' => config('simple-chat.broadcasting.enabled', false),
+            'channel' => 'simple-chat.' . $id,
+        ];
 
         $mode = config('simple-chat.mode', 'direct');
         $canReply = true;
@@ -317,6 +327,7 @@ class SimpleChatController extends Controller
         );
 
         $messages = SimpleChat::getMessages($id, 2);
+
         if ($messages->count() === 1) {
             SendNewConversationNotificationJob::dispatch($id, $request->content);
         }
@@ -324,6 +335,20 @@ class SimpleChatController extends Controller
         // Send notification for EACH message if enabled
         if (config('simple-chat.notifications.each_message.enabled')) {
             \SimpleChat\Jobs\SendNewMessageNotificationJob::dispatch($id, auth()->id(), $request->content);
+        }
+
+        // Broadcast via WebSocket if enabled
+        if (config('simple-chat.broadcasting.enabled', false)) {
+            $latest = $messages->first();
+            if ($latest) {
+                event(new MessageSent($conversation->id, [
+                    'id'              => $latest->id,
+                    'conversation_id' => $conversation->id,
+                    'sender_id'       => $latest->sender_id,
+                    'content'         => $latest->content,
+                    'created_at'      => (string) $latest->created_at,
+                ]));
+            }
         }
 
         return back();

@@ -25,8 +25,10 @@ composer require ambrosethebuild/simple-chat
 Publish the package configuration file, migrations, and views:
 
 ```bash
-php artisan vendor:publish --provider="SimpleChat\SimpleChatServiceProvider" --tag="config"
-php artisan vendor:publish --provider="SimpleChat\SimpleChatServiceProvider" --tag="views"
+php artisan vendor:publish --provider="SimpleChat\SimpleChatServiceProvider" --tag="simple-chat-config"
+php artisan vendor:publish --provider="SimpleChat\SimpleChatServiceProvider" --tag="simple-chat-views"
+php artisan vendor:publish --provider="SimpleChat\SimpleChatServiceProvider" --tag="simple-chat-translations"
+php artisan vendor:publish --provider="SimpleChat\SimpleChatServiceProvider" --tag="simple-chat-channels"
 ```
 
 Then run your migrations:

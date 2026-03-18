@@ -14,7 +14,8 @@
                     </svg>
                 </a>
                 <h1 class="text-lg font-medium text-gray-900">
-                    {!! config('simple-chat.titles.show', __('simple-chat::messages.titles.show')) !!} #{{ substr($conversation->id, 0, 8) }}
+                    {!! config('simple-chat.titles.show', __('simple-chat::messages.titles.show')) !!}
+                    #{{ substr($conversation->id, 0, 8) }}
                 </h1>
             </div>
             <div>
@@ -303,7 +304,9 @@
                         </svg>
                     </div>
                     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
-                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title-restore">{{ __('simple-chat::messages.modals.restore_title') }}</h3>
+                        <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title-restore">
+                            {{ __('simple-chat::messages.modals.restore_title') }}
+                        </h3>
                         <div class="mt-2">
                             <p class="text-sm text-gray-500">
                                 {{ __('simple-chat::messages.modals.restore_desc') }}
@@ -390,7 +393,7 @@
             errorSending: "{{ __('simple-chat::messages.alerts.error_sending') }}",
         };
 
-        @if(useWysiwyg)
+        if (useWysiwyg) {
             quill = new Quill('#sc-quill-editor', {
                 theme: 'snow',
                 placeholder: '{{ __('simple-chat::messages.placeholders.type_message') }}',
@@ -447,6 +450,8 @@
             initSupabase();
         } else if (chatConfig.driver === 'appwrite') {
             initAppwrite();
+        } else if (chatConfig.broadcasting && chatConfig.broadcasting.enabled) {
+            initEcho();
         } else {
             // Default to Polling (SQLite/Eloquent)
             setInterval(fetchMessages, 3000);
@@ -511,6 +516,24 @@
                     });
                 }
             }, 100);
+        }
+
+        // --- Laravel Echo (WebSocket) Strategy ---
+        function initEcho() {
+            if (typeof window.Echo === 'undefined') {
+                console.warn('[SimpleChat] Laravel Echo is not defined. Falling back to polling.');
+                setInterval(fetchMessages, 3000);
+                return;
+            }
+
+            window.Echo.private(chatConfig.broadcasting.channel)
+                .listen('.MessageSent', (msg) => {
+                    if (!knownIds.has(msg.id) && !knownIds.has(String(msg.id))) {
+                        knownIds.add(msg.id);
+                        appendMessage(msg);
+                        scrollToBottom();
+                    }
+                });
         }
 
         // --- Shared Logic ---

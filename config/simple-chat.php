@@ -148,6 +148,29 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Broadcasting (WebSocket)
+    |--------------------------------------------------------------------------
+    |
+    | When enabled, a `MessageSent` event is dispatched on the private channel
+    | `simple-chat.{conversationId}` each time a message is stored. The
+    | frontend will use Laravel Echo to receive messages in real time instead
+    | of the default HTTP polling strategy.
+    |
+    | Requires Laravel Echo and a compatible broadcaster (Reverb, Pusher,
+    | Soketi, etc.) to be configured in your application.
+    |
+    | Channel authorization is handled automatically by the package's channel
+    | route (only conversation participants may subscribe). You may customize
+    | this by publishing the channels file:
+    |   php artisan vendor:publish --tag=simple-chat-channels
+    |
+    */
+    'broadcasting' => [
+        'enabled' => env('SIMPLE_CHAT_BROADCASTING', false),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Chat Drivers
     |--------------------------------------------------------------------------
     |
