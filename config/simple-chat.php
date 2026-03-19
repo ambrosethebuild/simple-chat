@@ -40,12 +40,17 @@ return [
         // Permissions required for support agents. 
         // These will be checked using Laravel's `$user->can(...)` authorization.
         'permissions' => [
-            'view_tickets' => env('SIMPLE_CHAT_PERM_VIEW', 'view-tickets'),
-            'assign_tickets' => env('SIMPLE_CHAT_PERM_ASSIGN', 'assign-tickets'),
-            'reply_ticket' => env('SIMPLE_CHAT_PERM_REPLY', 'reply-ticket'),
-            'close_ticket' => env('SIMPLE_CHAT_PERM_CLOSE', 'close-ticket'),
-            'delete_ticket' => env('SIMPLE_CHAT_PERM_DELETE', 'delete-ticket'),
-            'view_deleted_tickets' => env('SIMPLE_CHAT_PERM_VIEW_DELETED', 'view-deleted-tickets'),
+            'view_tickets'        => env('SIMPLE_CHAT_PERM_VIEW',         'view-tickets'),
+            'assign_tickets'      => env('SIMPLE_CHAT_PERM_ASSIGN',        'assign-tickets'),
+            'unassign_agent'      => env('SIMPLE_CHAT_PERM_UNASSIGN',      'unassign-agent'),
+            'reply_ticket'        => env('SIMPLE_CHAT_PERM_REPLY',         'reply-ticket'),
+            'close_ticket'        => env('SIMPLE_CHAT_PERM_CLOSE',         'close-ticket'),
+            'delete_ticket'       => env('SIMPLE_CHAT_PERM_DELETE',        'delete-ticket'),
+            'view_deleted_tickets'=> env('SIMPLE_CHAT_PERM_VIEW_DELETED',  'view-deleted-tickets'),
+
+            // A super-admin holder bypasses all other permission checks and can
+            // oversee all conversations, access the dashboard, unassign agents, etc.
+            'super_admin'         => env('SIMPLE_CHAT_PERM_SUPER_ADMIN',   'simple-chat-super-admin'),
         ],
 
         // Maximum number of active tickets a user can have open

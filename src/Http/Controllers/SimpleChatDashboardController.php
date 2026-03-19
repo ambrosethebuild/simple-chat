@@ -3,10 +3,13 @@
 namespace SimpleChat\Http\Controllers;
 
 use Illuminate\Routing\Controller;
+use SimpleChat\Http\Controllers\Concerns\ChecksSuperAdmin;
 use SimpleChat\Models\Conversation;
 
 class SimpleChatDashboardController extends Controller
 {
+    use ChecksSuperAdmin;
+
     public function index()
     {
         $mode = config('simple-chat.mode', 'direct');
@@ -15,10 +18,15 @@ class SimpleChatDashboardController extends Controller
             abort(403, 'Unauthorized action.');
         }
 
-        $viewPerm = config('simple-chat.support.permissions.view_tickets', 'view-tickets');
-        if (!auth()->user()->can($viewPerm)) {
-            abort(403, 'Unauthorized action.');
+        // Super-admin bypasses the view_tickets permission check.
+        if (!$this->isSuperAdmin()) {
+            $viewPerm = config('simple-chat.support.permissions.view_tickets', 'view-tickets');
+            if (!auth()->user()->can($viewPerm)) {
+                abort(403, 'Unauthorized action.');
+            }
         }
+
+        $isSuperAdmin = $this->isSuperAdmin();
 
         $allConversations = Conversation::all();
 
@@ -54,19 +62,22 @@ class SimpleChatDashboardController extends Controller
         // Recent conversations (last 5)
         $recentConversations = Conversation::latest('updated_at')->take(5)->get();
 
-        // Build per-agent stats (all participants except index-0 creator are agents)
-        $agentStats = [];
+        // Build per-agent stats + conversations list (all participants except index-0 creator are agents)
+        $agentStats         = [];
+        $agentConversations = []; // agentId → [conversations] — used for unassign UI
+
         foreach ($allConversations as $conv) {
             $parts = is_array($conv->participants)
                 ? $conv->participants
                 : json_decode($conv->participants ?? '[]', true);
 
-            $agents = array_slice($parts ?? [], 1);
+            $agentList = array_slice($parts ?? [], 1);
 
-            foreach ($agents as $agentId) {
+            foreach ($agentList as $agentId) {
                 $agentId = (string) $agentId;
                 if (!isset($agentStats[$agentId])) {
-                    $agentStats[$agentId] = ['total' => 0, 'open' => 0, 'closed' => 0, 'last_activity' => null];
+                    $agentStats[$agentId]         = ['total' => 0, 'open' => 0, 'closed' => 0, 'last_activity' => null];
+                    $agentConversations[$agentId] = [];
                 }
                 $agentStats[$agentId]['total']++;
                 if ($conv->status === 'closed') {
@@ -77,6 +88,7 @@ class SimpleChatDashboardController extends Controller
                 if (!$agentStats[$agentId]['last_activity'] || $conv->updated_at > $agentStats[$agentId]['last_activity']) {
                     $agentStats[$agentId]['last_activity'] = $conv->updated_at;
                 }
+                $agentConversations[$agentId][] = $conv;
             }
         }
 
@@ -88,7 +100,7 @@ class SimpleChatDashboardController extends Controller
             'totalTickets', 'openTickets', 'closedTickets', 'unassignedTickets',
             'todayTickets', 'weekTickets', 'resolutionRate', 'deletedTickets',
             'ticketsPerDay', 'recentConversations',
-            'agentStats', 'agents'
+            'agentStats', 'agentConversations', 'agents', 'isSuperAdmin'
         ));
     }
 }

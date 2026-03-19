@@ -11,10 +11,13 @@ use SimpleChat\Events\ConversationStarted;
 use SimpleChat\Events\MessageSent;
 use SimpleChat\Jobs\SendAgentAssignedNotificationJob;
 use SimpleChat\Jobs\SendNewConversationNotificationJob;
+use SimpleChat\Http\Controllers\Concerns\ChecksSuperAdmin;
 use SimpleChat\Models\Conversation;
 
 class SimpleChatController extends Controller
 {
+    use ChecksSuperAdmin;
+
     public function index()
     {
         $userId = auth()->id();
@@ -24,15 +27,16 @@ class SimpleChatController extends Controller
 
         if ($mode === 'support' && auth()->check()) {
             $user = auth()->user();
-            $canViewTickets = $user->can(config('simple-chat.support.permissions.view_tickets', 'view-tickets'));
-            $canAssignTickets = $user->can(config('simple-chat.support.permissions.assign_tickets', 'assign-tickets'));
+            // Super-admin implicitly holds all permissions.
+            $canViewTickets   = $this->isSuperAdmin() || $user->can(config('simple-chat.support.permissions.view_tickets', 'view-tickets'));
+            $canAssignTickets = $this->isSuperAdmin() || $user->can(config('simple-chat.support.permissions.assign_tickets', 'assign-tickets'));
         }
 
         if ($mode === 'support' && $canViewTickets) {
             $conversations = Conversation::latest('updated_at')->get();
         } else {
             $conversations = Conversation::whereJsonContains('participants', (string) $userId)
-                ->orWhereJsonContains('participants', (int) $userId) // Handle both string/int IDs
+                ->orWhereJsonContains('participants', (int) $userId)
                 ->latest('updated_at')
                 ->get();
         }
@@ -112,6 +116,36 @@ class SimpleChatController extends Controller
         }
 
         return back()->with('success', 'Assigned successfully.');
+    }
+
+    public function unassign($id, $agentId)
+    {
+        // Only super-admins or users with the unassign_agent permission may do this.
+        $unassignPerm = config('simple-chat.support.permissions.unassign_agent', 'unassign-agent');
+        if (!$this->isSuperAdmin() && (!auth()->check() || !auth()->user()->can($unassignPerm))) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $conversation = Conversation::findOrFail($id);
+
+        $participants = is_array($conversation->participants)
+            ? $conversation->participants
+            : json_decode($conversation->participants, true) ?? [];
+
+        // Index 0 is the creator — never remove them.
+        $creator = (string) ($participants[0] ?? null);
+        if ((string) $agentId === $creator) {
+            return back()->with('error', 'Cannot unassign the conversation creator.');
+        }
+
+        $filtered = array_values(array_filter(
+            $participants,
+            fn($p) => (string) $p !== (string) $agentId
+        ));
+
+        $conversation->update(['participants' => $filtered]);
+
+        return back()->with('success', 'Agent unassigned successfully.');
     }
 
     public function close($id)
@@ -247,19 +281,23 @@ class SimpleChatController extends Controller
 
         if ($mode === 'support' && auth()->check()) {
             $user = auth()->user();
-            $participants = is_array($conversation->participants)
-                ? $conversation->participants
-                : json_decode($conversation->participants, true) ?? [];
 
-            // Typical implementation: creator is the first participant
-            $isCreator = isset($participants[0]) && $participants[0] == $user->id;
+            // Super-admin can view and reply to any conversation.
+            if (!$this->isSuperAdmin()) {
+                $participants = is_array($conversation->participants)
+                    ? $conversation->participants
+                    : json_decode($conversation->participants, true) ?? [];
 
-            if (!$isCreator) {
-                $isAssigned = in_array((string) $user->id, $participants) || in_array($user->id, $participants);
-                if ($isAssigned) {
-                    $canReply = $user->can(config('simple-chat.support.permissions.reply_ticket', 'reply-ticket'));
-                } else {
-                    $canReply = false;
+                // Typical implementation: creator is the first participant
+                $isCreator = isset($participants[0]) && $participants[0] == $user->id;
+
+                if (!$isCreator) {
+                    $isAssigned = in_array((string) $user->id, $participants) || in_array($user->id, $participants);
+                    if ($isAssigned) {
+                        $canReply = $user->can(config('simple-chat.support.permissions.reply_ticket', 'reply-ticket'));
+                    } else {
+                        $canReply = false;
+                    }
                 }
             }
         }

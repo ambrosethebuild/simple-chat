@@ -37,6 +37,8 @@ return [
         'view_dashboard'      => 'Dashboard',
         'never'               => 'Never',
         'no_recent'           => 'No conversations yet.',
+        'unassign_agent'      => 'Unassign',
+        'confirm_unassign'    => 'Are you sure you want to unassign this agent?',
     ],
     'actions' => [
         'close_ticket' => 'Close Ticket',

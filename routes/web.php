@@ -19,6 +19,7 @@ Route::group([
     Route::post('/{conversation}/restore', [SimpleChatController::class, 'restore'])->name('restore');
     Route::post('/{conversation}/close', [SimpleChatController::class, 'close'])->name('close');
     Route::post('/{conversation}/assign', [SimpleChatController::class, 'assign'])->name('assign');
+    Route::delete('/{conversation}/unassign/{agent}', [SimpleChatController::class, 'unassign'])->name('unassign');
     Route::get('/{conversation}/messages', [SimpleChatController::class, 'fetchMessages'])->name('messages.fetch');
     Route::post('/{conversation}/messages', [SimpleChatController::class, 'store'])->name('messages.store');
 });
