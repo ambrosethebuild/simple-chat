@@ -76,7 +76,7 @@
 
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex items-start gap-4">
                 <div class="flex-shrink-0 w-12 h-12 rounded-lg bg-sky-50 flex items-center justify-center">
-                    <x-tabler-calendar-today class="w-6 h-6 text-sky-600" />
+                    <x-tabler-calendar class="w-6 h-6 text-sky-600" />
                 </div>
                 <div>
                     <p class="text-sm font-medium text-gray-500">{{ __('simple-chat::messages.dashboard.today_tickets') }}</p>
