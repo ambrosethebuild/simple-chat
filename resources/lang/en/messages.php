@@ -39,6 +39,10 @@ return [
         'no_recent'           => 'No conversations yet.',
         'unassign_agent'      => 'Unassign',
         'confirm_unassign'    => 'Are you sure you want to unassign this agent?',
+        'assign_agent'        => 'Assign Agent',
+        'search_agents'       => 'Search agents by name or email…',
+        'no_agents_found'     => 'No agents found matching your search.',
+        'already_assigned'    => 'Already assigned',
     ],
     'actions' => [
         'close_ticket' => 'Close Ticket',

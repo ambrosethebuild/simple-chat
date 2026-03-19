@@ -11,6 +11,7 @@ Route::group([
 ], function () {
     Route::get('/', [SimpleChatController::class, 'index'])->name('index');
     Route::get('/dashboard', [SimpleChatDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/agents/search', [SimpleChatDashboardController::class, 'searchAgents'])->name('agents.search');
     Route::get('/trashed', [SimpleChatController::class, 'trashed'])->name('trashed');
     Route::get('/create', [SimpleChatController::class, 'create'])->name('create');
     Route::post('/start', [SimpleChatController::class, 'start'])->name('start');

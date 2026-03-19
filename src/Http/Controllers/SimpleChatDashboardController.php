@@ -2,6 +2,7 @@
 
 namespace SimpleChat\Http\Controllers;
 
+use Illuminate\Http\Request;
 use Illuminate\Routing\Controller;
 use SimpleChat\Http\Controllers\Concerns\ChecksSuperAdmin;
 use SimpleChat\Models\Conversation;
@@ -102,5 +103,42 @@ class SimpleChatDashboardController extends Controller
             'ticketsPerDay', 'recentConversations',
             'agentStats', 'agentConversations', 'agents', 'isSuperAdmin'
         ));
+    }
+
+    /**
+     * JSON search for users who hold the reply_ticket permission.
+     * Only accessible by super-admins.
+     */
+    public function searchAgents(Request $request)
+    {
+        if (!$this->isSuperAdmin()) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $search    = trim($request->get('q', ''));
+        $replyPerm = config('simple-chat.support.permissions.reply_ticket', 'reply-ticket');
+        $userClass = config('auth.providers.users.model', '\App\Models\User');
+
+        $query = $userClass::query()->select(['id', 'name', 'email']);
+
+        if ($search !== '') {
+            $query->where(function ($q) use ($search) {
+                $q->where('name', 'like', "%{$search}%")
+                  ->orWhere('email', 'like', "%{$search}%");
+            });
+        }
+
+        // If Spatie Laravel Permission is installed, pre-filter at DB level.
+        // Otherwise we filter in PHP after fetching a small candidate set.
+        if (method_exists($userClass, 'permission')) {
+            $users = $query->permission($replyPerm)->limit(15)->get();
+        } else {
+            $users = $query->limit(50)->get()
+                ->filter(fn($u) => $u->can($replyPerm))
+                ->take(15)
+                ->values();
+        }
+
+        return response()->json($users);
     }
 }

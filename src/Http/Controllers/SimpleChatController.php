@@ -91,14 +91,23 @@ class SimpleChatController extends Controller
         return redirect()->route('simple-chat.show', $conversationId);
     }
 
-    public function assign($id)
+    public function assign(Request $request, $id)
     {
         $mode = config('simple-chat.mode', 'direct');
-        if ($mode === 'support') {
-            $assignPerm = config('simple-chat.support.permissions.assign_tickets', 'assign-tickets');
-            if (auth()->check() && !auth()->user()->can($assignPerm)) {
-                abort(403, 'Unauthorized action.');
+
+        if ($this->isSuperAdmin()) {
+            // Super-admin can assign any user; defaults to self if no user_id given.
+            $userId = $request->filled('user_id')
+                ? (string) $request->user_id
+                : (string) auth()->id();
+        } else {
+            if ($mode === 'support') {
+                $assignPerm = config('simple-chat.support.permissions.assign_tickets', 'assign-tickets');
+                if (auth()->check() && !auth()->user()->can($assignPerm)) {
+                    abort(403, 'Unauthorized action.');
+                }
             }
+            $userId = (string) auth()->id();
         }
 
         $conversation = Conversation::findOrFail($id);
@@ -106,8 +115,6 @@ class SimpleChatController extends Controller
         $participants = is_array($conversation->participants)
             ? $conversation->participants
             : json_decode($conversation->participants, true) ?? [];
-
-        $userId = (string) auth()->id();
 
         if (!in_array($userId, $participants)) {
             $participants[] = $userId;
@@ -306,7 +313,9 @@ class SimpleChatController extends Controller
             $canReply = false;
         }
 
-        return view('simple-chat::show', compact('conversation', 'messages', 'chatConfig', 'mode', 'canReply'));
+        $isSuperAdmin = $this->isSuperAdmin();
+
+        return view('simple-chat::show', compact('conversation', 'messages', 'chatConfig', 'mode', 'canReply', 'isSuperAdmin'));
     }
 
     public function fetchMessages($id)

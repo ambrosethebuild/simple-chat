@@ -91,6 +91,127 @@
             </div>
         @endif
 
+        {{-- Super-admin: Assign Agent widget --}}
+        @if($isSuperAdmin && config('simple-chat.mode') === 'support' && $conversation->status !== 'closed' && !$conversation->trashed())
+            @php
+                $assignedParticipants = is_array($conversation->participants)
+                    ? $conversation->participants
+                    : json_decode($conversation->participants ?? '[]', true);
+            @endphp
+            <div class="bg-violet-50 border border-violet-200 px-4 py-3 sm:px-6 shrink-0" id="sc-assign-agent-panel">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold text-violet-700 flex items-center gap-1">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        {{ __('simple-chat::messages.dashboard.assign_agent') }}
+                    </span>
+                    <button type="button" onclick="document.getElementById('sc-assign-search-wrap').classList.toggle('hidden')"
+                            class="text-xs text-violet-600 hover:text-violet-800 underline">
+                        {{ __('simple-chat::messages.dashboard.assign_agent') }} &darr;
+                    </button>
+                </div>
+
+                <div id="sc-assign-search-wrap" class="hidden">
+                    <div class="relative">
+                        <input type="text" id="sc-agent-search"
+                               placeholder="{{ __('simple-chat::messages.dashboard.search_agents') }}"
+                               class="w-full text-sm border border-violet-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                               autocomplete="off" />
+                        <div id="sc-agent-results"
+                             class="hidden absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto text-sm">
+                        </div>
+                    </div>
+                    <p id="sc-agent-no-results" class="hidden mt-1 text-xs text-gray-400 italic">
+                        {{ __('simple-chat::messages.dashboard.no_agents_found') }}
+                    </p>
+                </div>
+
+                {{-- Hidden assign form (submitted via JS) --}}
+                <form id="sc-assign-form" method="POST"
+                      action="{{ route('simple-chat.assign', $conversation->id) }}"
+                      class="hidden">
+                    @csrf
+                    <input type="hidden" name="user_id" id="sc-assign-user-id" />
+                </form>
+            </div>
+
+            <script>
+            (function () {
+                const searchInput   = document.getElementById('sc-agent-search');
+                const resultsBox    = document.getElementById('sc-agent-results');
+                const noResults     = document.getElementById('sc-agent-no-results');
+                const assignForm    = document.getElementById('sc-assign-form');
+                const assignUserId  = document.getElementById('sc-assign-user-id');
+                const searchUrl     = '{{ route('simple-chat.agents.search') }}';
+                const alreadyLabel  = '{{ __('simple-chat::messages.dashboard.already_assigned') }}';
+                const assigned      = @json(array_map('strval', $assignedParticipants ?? []));
+
+                let debounce;
+
+                searchInput.addEventListener('input', function () {
+                    clearTimeout(debounce);
+                    const q = this.value.trim();
+                    if (q.length < 2) {
+                        resultsBox.classList.add('hidden');
+                        noResults.classList.add('hidden');
+                        return;
+                    }
+                    debounce = setTimeout(() => fetchAgents(q), 300);
+                });
+
+                function fetchAgents(q) {
+                    fetch(searchUrl + '?q=' + encodeURIComponent(q), {
+                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                    })
+                    .then(r => r.json())
+                    .then(users => renderResults(users))
+                    .catch(() => {});
+                }
+
+                function renderResults(users) {
+                    resultsBox.innerHTML = '';
+                    if (!users.length) {
+                        resultsBox.classList.add('hidden');
+                        noResults.classList.remove('hidden');
+                        return;
+                    }
+                    noResults.classList.add('hidden');
+                    users.forEach(u => {
+                        const isAssigned = assigned.includes(String(u.id));
+                        const btn = document.createElement('button');
+                        btn.type = 'button';
+                        btn.className = 'w-full flex items-center justify-between px-3 py-2 hover:bg-violet-50 transition-colors text-left ' + (isAssigned ? 'opacity-50 cursor-not-allowed' : '');
+                        btn.innerHTML = `
+                            <span>
+                                <span class="font-medium text-gray-800">${u.name}</span>
+                                <span class="text-gray-400 text-xs ml-1">${u.email}</span>
+                            </span>
+                            ${isAssigned
+                                ? `<span class="text-xs text-gray-400 italic">${alreadyLabel}</span>`
+                                : `<span class="text-xs font-semibold text-violet-600">Assign &rarr;</span>`
+                            }`;
+                        if (!isAssigned) {
+                            btn.addEventListener('click', () => assignAgent(u));
+                        }
+                        resultsBox.appendChild(btn);
+                    });
+                    resultsBox.classList.remove('hidden');
+                }
+
+                function assignAgent(u) {
+                    assignUserId.value = u.id;
+                    assignForm.submit();
+                }
+
+                // Close dropdown on outside click
+                document.addEventListener('click', function (e) {
+                    if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
+                        resultsBox.classList.add('hidden');
+                    }
+                });
+            })();
+            </script>
+        @endif
+
         <div class="flex-1 overflow-y-auto scroll-smooth space-y-4 py-4 px-2 border-l border-gray-200 border-r"
             id="sc-messages-container">
             @php $lastDate = null; @endphp
