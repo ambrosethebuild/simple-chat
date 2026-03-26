@@ -120,10 +120,10 @@ return [
     |
     | Define what type of input editor should be used for the chat.
     |
-    | Supported: "textarea" (default auto-expanding), "wysiwyg" (Quill.js)
+    | Supported: "textarea", "wysiwyg" (Quill.js), "modern" (ContentEditable)
     |
     */
-    'editor' => env('SIMPLE_CHAT_EDITOR', 'textarea'),
+    'editor' => env('SIMPLE_CHAT_EDITOR', 'modern'),
 
     /*
     |--------------------------------------------------------------------------

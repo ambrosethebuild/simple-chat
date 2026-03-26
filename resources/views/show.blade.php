@@ -303,14 +303,22 @@
             @else
                 <form id="sc-message-form" class="flex w-full" onsubmit="sendMessage(event)">
                     <div class="flex items-center w-full space-x-2">
-                        <div class="flex-1 bg-gray-50 rounded-lg p-2 flex items-center">
+                        <div class="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 flex items-center border border-transparent focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all duration-200">
                             @if(isset($editor) && $editor === 'wysiwyg')
                                 <div id="sc-quill-editor" class="flex-1 min-h-[40px] max-h-[150px] overflow-y-auto"></div>
+                                <input type="hidden" name="content" id="sc-content">
+                            @elseif(isset($editor) && $editor === 'modern')
+                                <div id="sc-modern-editor"
+                                     contenteditable="true"
+                                     class="flex-1 min-h-[24px] max-h-[150px] overflow-y-auto text-sm text-gray-900 placeholder-gray-400 focus:outline-none leading-relaxed"
+                                     data-placeholder="{{ __('simple-chat::messages.placeholders.type_message') }}"></div>
                                 <input type="hidden" name="content" id="sc-content">
                             @else
                                 <textarea name="content" id="sc-content" rows="1"
                                     class="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 placeholder-gray-500 resize-none py-1 block w-full sm:text-sm"
-                                    placeholder="{{ __('simple-chat::messages.placeholders.type_message') }}" required></textarea>
+                                    placeholder="{{ __('simple-chat::messages.placeholders.type_message') }}"
+                                    oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
+                                    required></textarea>
                             @endif
                         </div>
                         <button type="submit"
@@ -522,6 +530,13 @@
         </style>
     @endif
 
+    @if(isset($editor) && $editor === 'modern')
+        <style>
+            #sc-modern-editor:empty:before { content: attr(data-placeholder); color: #9ca3af; cursor: text; }
+            #sc-modern-editor { word-break: break-word; white-space: pre-wrap; transition: all 0.2s; }
+        </style>
+    @endif
+
     @if($chatConfig['driver'] === 'appwrite')
         <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
     @elseif($chatConfig['driver'] === 'supabase')
@@ -533,6 +548,8 @@
         const input = document.getElementById('sc-content');
         let quill = null;
         const useWysiwyg = {{ isset($editor) && $editor === 'wysiwyg' ? 'true' : 'false' }};
+        const useModern = {{ isset($editor) && $editor === 'modern' ? 'true' : 'false' }};
+        const modernEditor = document.getElementById('sc-modern-editor');
 
         const translations = {
             today: "{{ __('simple-chat::messages.date.today') }}",
@@ -557,6 +574,28 @@
             // Sync quill content to hidden input immediately on change
             quill.on('text-change', function () {
                 input.value = quill.root.innerHTML === '<p><br></p>' ? '' : quill.root.innerHTML;
+            });
+        } else if (useModern && modernEditor) {
+            modernEditor.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    if (modernEditor.innerText.trim()) {
+                        input.value = modernEditor.innerText;
+                        sendMessage(new Event('submit'));
+                        modernEditor.innerText = '';
+                        input.value = '';
+                    }
+                }
+            });
+
+            modernEditor.addEventListener('input', () => {
+                input.value = modernEditor.innerText;
+            });
+
+            modernEditor.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const text = e.clipboardData.getData('text/plain');
+                document.execCommand('insertText', false, text);
             });
         } else {
             // Simple textarea submit on Enter logic (prevent shift+enter)
@@ -849,9 +888,8 @@
                 contentEl.classList.add('prose', 'prose-sm', 'max-w-none');
                 if (isMe) contentEl.classList.add('text-white');
             } else {
-                const p = document.createElement('p');
-                p.textContent = msg.content;
-                contentEl.appendChild(p);
+                contentEl.textContent = msg.content;
+                contentEl.classList.add('whitespace-pre-wrap');
             }
 
             const emptyState = document.getElementById('sc-empty-state');

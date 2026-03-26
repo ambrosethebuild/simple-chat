@@ -8,7 +8,7 @@
             <div class="text-sm prose prose-sm max-w-none {!! $message->sender_id == auth()->id() ? 'text-white' : '' !!}">
                 {!! $message->content !!}</div>
         @else
-            <p class="text-sm">{{ $message->content }}</p>
+            <div class="text-sm whitespace-pre-wrap">{!! nl2br(e($message->content)) !!}</div>
         @endif
         <p class="text-xs mt-1 {{ $message->sender_id == auth()->id() ? 'text-indigo-200' : 'text-gray-400' }}">
             {{ $message->created_at->format('H:i') }}
