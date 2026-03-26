@@ -47,6 +47,7 @@ return [
             'close_ticket'        => env('SIMPLE_CHAT_PERM_CLOSE',         'close-ticket'),
             'delete_ticket'       => env('SIMPLE_CHAT_PERM_DELETE',        'delete-ticket'),
             'view_deleted_tickets'=> env('SIMPLE_CHAT_PERM_VIEW_DELETED',  'view-deleted-tickets'),
+            'export_chat'         => env('SIMPLE_CHAT_PERM_EXPORT',        'export-chat'),
 
             // A super-admin holder bypasses all other permission checks and can
             // oversee all conversations, access the dashboard, unassign agents, etc.

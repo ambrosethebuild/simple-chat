@@ -21,6 +21,26 @@
             <div>
                 <p class="text-sm text-gray-500">{{ $conversation->updated_at->diffForHumans() }}</p>
                 <div class="flex space-x-2">
+                    @if(isset($canExport) && $canExport)
+                        <div class="relative inline-block text-left">
+                            <button type="button" 
+                                class="mt-1 inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                                onclick="document.getElementById('sc-export-dropdown').classList.toggle('hidden')">
+                                {{ __('simple-chat::messages.actions.export_chat') }}
+                                <svg class="ml-2 -mr-0.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
+                            </button>
+                            <div id="sc-export-dropdown" 
+                                class="hidden origin-top-right absolute right-0 mt-2 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30" role="menu">
+                                <div class="py-1" role="none">
+                                    <a href="{{ route('simple-chat.export', [$conversation->id, 'format' => 'txt']) }}" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">TXT</a>
+                                    <a href="{{ route('simple-chat.export', [$conversation->id, 'format' => 'excel']) }}" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Excel (CSV)</a>
+                                    <a href="{{ route('simple-chat.export', [$conversation->id, 'format' => 'pdf']) }}" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">PDF</a>
+                                </div>
+                            </div>
+                        </div>
+                    @endif
                     @if($conversation->status != 'closed' && !$conversation->trashed())
                         @can("close-ticket")
                             <button type="button"
@@ -223,15 +243,22 @@
                 @endphp
 
                 @if($lastDate !== $messageDate)
-                    <div class="flex justify-center my-4 sticky top-0 z-10 date-indicator" data-date="{{ $messageDate }}">
-                        <span
-                            class="px-3 py-1 bg-gray-100/80 backdrop-blur-sm text-gray-500 text-xs rounded-full shadow-sm border border-gray-200">
-                            {{ $displayDate }}
-                        </span>
-                    </div>
+                    @if($lastDate !== null)
+                        </div> {{-- Close previous sc-date-section --}}
+                    @endif
+                    <div class="sc-date-section space-y-4" data-date="{{ $messageDate }}">
+                        <div class="flex justify-center my-4 sticky top-0 z-10 date-indicator" data-date="{{ $messageDate }}">
+                            <span
+                                class="px-3 py-1 bg-gray-100/80 backdrop-blur-sm text-gray-500 text-xs rounded-full shadow-sm border border-gray-200">
+                                {{ $displayDate }}
+                            </span>
+                        </div>
                     @php $lastDate = $messageDate; @endphp
                 @endif
                 @include('simple-chat::components.message-item', ['message' => $message])
+                @if($loop->last)
+                    </div> {{-- Close the final sc-date-section --}}
+                @endif
             @empty
                 @include('simple-chat::components.empty-messages')
             @endforelse
@@ -664,6 +691,18 @@
             const content = input.value;
             if (!content.trim()) return;
 
+            // Optimistic Append
+            const tempId = 'temp-' + Date.now();
+            const optimisticMsg = {
+                id: tempId,
+                content: content,
+                sender_id: currentUserId,
+                created_at: new Date().toISOString(),
+                is_optimistic: true
+            };
+            appendMessage(optimisticMsg);
+            scrollToBottom();
+
             input.value = ''; // Optimistic clear
             if (quill) quill.root.innerHTML = '';
 
@@ -679,17 +718,27 @@
                 });
 
                 if (response.ok) {
-                    // If polling, fetch immediately. 
-                    // If realtime, wait for event (or push optimistically if desired).
-                    // For simplicity, we can just fetchMessages once to be sure.
-                    if (chatConfig.driver !== 'supabase' && chatConfig.driver !== 'appwrite') {
-                        fetchMessages();
+                    const realMsg = await response.json();
+                    // Update the optimistic message with the real ID
+                    const el = container.querySelector(`[data-id="${tempId}"]`);
+                    if (el) {
+                        el.dataset.id = realMsg.id;
+                        el.classList.remove('is-optimistic');
+                        el.style.opacity = '1';
                     }
+                    knownIds.delete(tempId);
+                    knownIds.add(realMsg.id);
+                    knownIds.add(String(realMsg.id));
                 } else {
+                    // Remove optimistic msg if failed
+                    const el = container.querySelector(`[data-id="${tempId}"]`);
+                    if (el) el.remove();
                     alert(translations.failedToSend);
                 }
             } catch (error) {
                 console.error('Error:', error);
+                const el = container.querySelector(`[data-id="${tempId}"]`);
+                if (el) el.remove();
                 alert(translations.errorSending);
             }
         }
@@ -740,16 +789,44 @@
             const date = new Date(msg.created_at || new Date());
             const msgDateStr = date.toISOString().split('T')[0];
 
-            if (msgDateStr !== lastAppendedDate) {
+            let section = container.querySelector(`.sc-date-section[data-date="${msgDateStr}"]`);
+
+            // Duplicate prevention for optimistic messages
+            // If this is a real message, check if we already have an optimistic one that matches
+            if (!msg.is_optimistic) {
+                const optimisticMatches = section ? section.querySelectorAll('.is-optimistic') : [];
+                for (let optEl of optimisticMatches) {
+                    const optContent = optEl.querySelector('.sc-msg-content').textContent.trim();
+                    const realContent = msg.content.replace(/<[^>]*>?/gm, '').trim(); // Basic strip tags for comparison
+                    
+                    if (optContent === realContent || optEl.querySelector('.sc-msg-content').innerHTML.trim() === msg.content.trim()) {
+                        // Found a match! Update it and skip appending
+                        optEl.dataset.id = msg.id;
+                        optEl.classList.remove('is-optimistic');
+                        optEl.style.opacity = '1';
+                        knownIds.add(msg.id);
+                        knownIds.add(String(msg.id));
+                        return;
+                    }
+                }
+            }
+
+            if (!section) {
                 const day = date.toDateString() === new Date().toDateString() ? translations.today :
                     (date.toDateString() === new Date(Date.now() - 86400000).toDateString() ? translations.yesterday :
                         date.toLocaleDateString([], { month: 'short', day: 'numeric', year: 'numeric' }));
+
+                section = document.createElement('div');
+                section.className = "sc-date-section space-y-4";
+                section.dataset.date = msgDateStr;
 
                 const dateDiv = document.createElement('div');
                 dateDiv.className = "flex justify-center my-4 sticky top-0 z-10 date-indicator";
                 dateDiv.dataset.date = msgDateStr;
                 dateDiv.innerHTML = `<span class="px-3 py-1 bg-gray-100/80 backdrop-blur-sm text-gray-500 text-xs rounded-full shadow-sm border border-gray-200">${day}</span>`;
-                container.appendChild(dateDiv);
+                
+                section.appendChild(dateDiv);
+                container.appendChild(section);
                 lastAppendedDate = msgDateStr;
             }
 
@@ -757,6 +834,11 @@
             const clone = template.content.cloneNode(true);
             const msgItem = clone.querySelector('.message-item');
             msgItem.dataset.id = msg.id;
+
+            if (msg.is_optimistic) {
+                msgItem.classList.add('is-optimistic');
+                msgItem.style.opacity = '0.7';
+            }
 
             const time = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
             clone.querySelector('.sc-msg-time').textContent = time;
@@ -775,7 +857,7 @@
             const emptyState = document.getElementById('sc-empty-state');
             if (emptyState) emptyState.remove();
 
-            container.appendChild(clone);
+            section.appendChild(clone);
         }
 
         function escapeHtml(text) {

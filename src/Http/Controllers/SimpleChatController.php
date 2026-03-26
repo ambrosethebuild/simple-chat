@@ -314,8 +314,85 @@ class SimpleChatController extends Controller
         }
 
         $isSuperAdmin = $this->isSuperAdmin();
+        $exportPerm = config('simple-chat.support.permissions.export_chat', 'export-chat');
+        $canExport = $isSuperAdmin || (auth()->check() && auth()->user()->can($exportPerm));
 
-        return view('simple-chat::show', compact('conversation', 'messages', 'chatConfig', 'mode', 'canReply', 'isSuperAdmin'));
+        return view('simple-chat::show', compact('conversation', 'messages', 'chatConfig', 'mode', 'canReply', 'isSuperAdmin', 'canExport'));
+    }
+
+    public function export(Request $request, $id)
+    {
+        $conversation = Conversation::findOrFail($id);
+        $exportPerm = config('simple-chat.support.permissions.export_chat', 'export-chat');
+
+        if (!$this->isSuperAdmin() && (!auth()->check() || !auth()->user()->can($exportPerm))) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $format = $request->get('format', 'txt');
+        $messages = SimpleChat::getMessages($id, 1000)->reverse();
+
+        $filename = "chat-export-{$id}-" . now()->format('Y-m-d-His');
+
+        switch ($format) {
+            case 'excel':
+                return $this->exportExcel($messages, $filename);
+            case 'pdf':
+                return $this->exportPdf($conversation, $messages, $filename);
+            case 'txt':
+            default:
+                return $this->exportTxt($messages, $filename);
+        }
+    }
+
+    protected function exportTxt($messages, $filename)
+    {
+        $content = "";
+        foreach ($messages as $message) {
+            $sender = $message->sender_name ?? "User #{$message->sender_id}";
+            $time = \Carbon\Carbon::parse($message->created_at)->format('Y-m-d H:i:s');
+            $content .= "[{$time}] {$sender}: {$message->content}\n";
+        }
+
+        return response($content)
+            ->header('Content-Type', 'text/plain')
+            ->header('Content-Disposition', "attachment; filename=\"{$filename}.txt\"");
+    }
+
+    protected function exportExcel($messages, $filename)
+    {
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => "attachment; filename=\"{$filename}.csv\"",
+        ];
+
+        $callback = function() use ($messages) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['ID', 'Sender', 'Content', 'Timestamp']);
+
+            foreach ($messages as $message) {
+                fputcsv($file, [
+                    $message->id,
+                    $message->sender_name ?? $message->sender_id,
+                    $message->content,
+                    \Carbon\Carbon::parse($message->created_at)->format('Y-m-d H:i:s'),
+                ]);
+            }
+
+            fclose($file);
+        };
+
+        return response()->stream($callback, 200, $headers);
+    }
+
+    protected function exportPdf($conversation, $messages, $filename)
+    {
+        if (!class_exists('\Barryvdh\DomPDF\Facade\Pdf')) {
+            return back()->with('error', 'PDF export requires barryvdh/laravel-dompdf to be installed.');
+        }
+
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('simple-chat::export-pdf', compact('conversation', 'messages'));
+        return $pdf->download("{$filename}.pdf");
     }
 
     public function fetchMessages($id)
@@ -396,6 +473,10 @@ class SimpleChatController extends Controller
                     'created_at'      => (string) $latest->created_at,
                 ]));
             }
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json($messages->first());
         }
 
         return back();

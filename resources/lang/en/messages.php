@@ -63,6 +63,7 @@ return [
         'view_conversation' => 'View Conversation',
         'view_reply' => 'View Reply',
         'view_ticket_summary' => 'View Ticket Summary',
+        'export_chat' => 'Export Chat',
     ],
     'status' => [
         'unassigned' => 'Unassigned',
