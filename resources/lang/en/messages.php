@@ -79,6 +79,7 @@ return [
         'closed_badge' => 'Closed',
         'deleted_badge' => 'Deleted',
         'no_messages' => 'No messages yet. Say hello!',
+        'joined_at' => 'Joined at:',
     ],
     'labels' => [
         'user_id' => 'User ID',

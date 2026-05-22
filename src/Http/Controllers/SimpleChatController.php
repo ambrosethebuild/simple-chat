@@ -33,11 +33,14 @@ class SimpleChatController extends Controller
         }
 
         if ($mode === 'support' && $canViewTickets) {
-            $conversations = Conversation::latest('updated_at')->get();
+            $conversations = Conversation::orderByDesc('updated_at')
+                ->orderByDesc('created_at')
+                ->get();
         } else {
             $conversations = Conversation::whereJsonContains('participants', (string) $userId)
                 ->orWhereJsonContains('participants', (int) $userId)
-                ->latest('updated_at')
+                ->orderByDesc('updated_at')
+                ->orderByDesc('created_at')
                 ->get();
         }
 
@@ -284,10 +287,12 @@ class SimpleChatController extends Controller
 
         $mode = config('simple-chat.mode', 'direct');
         $canReply = true;
+        $canAssignTickets = false;
         $editor = $chatConfig['editor'];
 
         if ($mode === 'support' && auth()->check()) {
             $user = auth()->user();
+            $canAssignTickets = $this->isSuperAdmin() || $user->can(config('simple-chat.support.permissions.assign_tickets', 'assign-tickets'));
 
             // Super-admin can view and reply to any conversation.
             if (!$this->isSuperAdmin()) {
@@ -317,7 +322,7 @@ class SimpleChatController extends Controller
         $exportPerm = config('simple-chat.support.permissions.export_chat', 'export-chat');
         $canExport = $isSuperAdmin || (auth()->check() && auth()->user()->can($exportPerm));
 
-        return view('simple-chat::show', compact('conversation', 'messages', 'chatConfig', 'mode', 'canReply', 'isSuperAdmin', 'canExport'));
+        return view('simple-chat::show', compact('conversation', 'messages', 'chatConfig', 'mode', 'canReply', 'canAssignTickets', 'isSuperAdmin', 'canExport'));
     }
 
     public function export(Request $request, $id)
@@ -449,6 +454,8 @@ class SimpleChatController extends Controller
             auth()->id(),
             $request->content
         );
+
+        $conversation->touch();
 
         $messages = SimpleChat::getMessages($id, 2);
 

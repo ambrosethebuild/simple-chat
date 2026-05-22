@@ -19,11 +19,26 @@
                 </h1>
             </div>
             <div>
-                <p class="text-sm text-gray-500">{{ $conversation->updated_at->diffForHumans() }}</p>
+                <p class="text-sm text-gray-500 text-right">{{ $conversation->updated_at->diffForHumans() }}</p>
                 <div class="flex space-x-2">
+                    @if(isset($mode) && $mode === 'support' && isset($canAssignTickets) && $canAssignTickets)
+                        @php
+                            $parts = is_array($conversation->participants) ? $conversation->participants : json_decode($conversation->participants ?? '[]', true);
+                            $isAssigned = is_array($parts) && count($parts) > 1;
+                        @endphp
+                        @if(!$isAssigned && $conversation->status !== 'closed' && !$conversation->trashed())
+                            <form action="{{ route('simple-chat.assign', $conversation->id) }}" method="POST">
+                                @csrf
+                                <button type="submit"
+                                    class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white {{ config('simple-chat.theme.primary_color', 'bg-indigo-600') }} {{ config('simple-chat.theme.primary_hover', 'hover:bg-indigo-700') }} focus:outline-none focus:ring-2 focus:ring-offset-2 {{ config('simple-chat.theme.primary_ring', 'focus:ring-indigo-500') }} transition-colors">
+                                    {{ __('simple-chat::messages.actions.assign_to_me') }}
+                                </button>
+                            </form>
+                        @endif
+                    @endif
                     @if(isset($canExport) && $canExport)
                         <div class="relative inline-block text-left">
-                            <button type="button" 
+                            <button type="button"
                                 class="mt-1 inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
                                 onclick="document.getElementById('sc-export-dropdown').classList.toggle('hidden')">
                                 {{ __('simple-chat::messages.actions.export_chat') }}
@@ -31,12 +46,17 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                                 </svg>
                             </button>
-                            <div id="sc-export-dropdown" 
-                                class="hidden origin-top-right absolute right-0 mt-2 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30" role="menu">
+                            <div id="sc-export-dropdown"
+                                class="hidden origin-top-right absolute right-0 mt-2 w-36 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
+                                role="menu">
                                 <div class="py-1" role="none">
-                                    <a href="{{ route('simple-chat.export', [$conversation->id, 'format' => 'txt']) }}" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">TXT</a>
-                                    <a href="{{ route('simple-chat.export', [$conversation->id, 'format' => 'excel']) }}" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Excel (CSV)</a>
-                                    <a href="{{ route('simple-chat.export', [$conversation->id, 'format' => 'pdf']) }}" class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">PDF</a>
+                                    <a href="{{ route('simple-chat.export', [$conversation->id, 'format' => 'txt']) }}"
+                                        class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">TXT</a>
+                                    <a href="{{ route('simple-chat.export', [$conversation->id, 'format' => 'excel']) }}"
+                                        class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">Excel
+                                        (CSV)</a>
+                                    <a href="{{ route('simple-chat.export', [$conversation->id, 'format' => 'pdf']) }}"
+                                        class="text-gray-700 block px-4 py-2 text-sm hover:bg-gray-100" role="menuitem">PDF</a>
                                 </div>
                             </div>
                         </div>
@@ -96,7 +116,8 @@
                                 @endphp
                                 @if($noneOfTheSupportPermissions == false)
                                     <p class="text-sm text-gray-400 ml-2">
-                                        {{ $participant->created_at->diffForHumans() }}
+                                        {{-- joined at label --}}
+                                        {{ __('simple-chat::messages.status.joined_at') }} {{ $participant->created_at->diffForHumans() }}
                                     </p>
                                 @endif
                             </div>
@@ -121,11 +142,15 @@
             <div class="bg-violet-50 border border-violet-200 px-4 py-3 sm:px-6 shrink-0" id="sc-assign-agent-panel">
                 <div class="flex items-center justify-between mb-2">
                     <span class="text-xs font-semibold text-violet-700 flex items-center gap-1">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none"
+                            stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path
+                                d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
                         {{ __('simple-chat::messages.dashboard.assign_agent') }}
                     </span>
                     <button type="button" onclick="document.getElementById('sc-assign-search-wrap').classList.toggle('hidden')"
-                            class="text-xs text-violet-600 hover:text-violet-800 underline">
+                        class="text-xs text-violet-600 hover:text-violet-800 underline">
                         {{ __('simple-chat::messages.dashboard.assign_agent') }} &darr;
                     </button>
                 </div>
@@ -133,11 +158,11 @@
                 <div id="sc-assign-search-wrap" class="hidden">
                     <div class="relative">
                         <input type="text" id="sc-agent-search"
-                               placeholder="{{ __('simple-chat::messages.dashboard.search_agents') }}"
-                               class="w-full text-sm border border-violet-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
-                               autocomplete="off" />
+                            placeholder="{{ __('simple-chat::messages.dashboard.search_agents') }}"
+                            class="w-full text-sm border border-violet-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-violet-400 bg-white"
+                            autocomplete="off" />
                         <div id="sc-agent-results"
-                             class="hidden absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto text-sm">
+                            class="hidden absolute z-20 mt-1 w-full bg-white border border-gray-200 rounded-lg shadow-lg max-h-52 overflow-y-auto text-sm">
                         </div>
                     </div>
                     <p id="sc-agent-no-results" class="hidden mt-1 text-xs text-gray-400 italic">
@@ -146,89 +171,88 @@
                 </div>
 
                 {{-- Hidden assign form (submitted via JS) --}}
-                <form id="sc-assign-form" method="POST"
-                      action="{{ route('simple-chat.assign', $conversation->id) }}"
-                      class="hidden">
+                <form id="sc-assign-form" method="POST" action="{{ route('simple-chat.assign', $conversation->id) }}"
+                    class="hidden">
                     @csrf
                     <input type="hidden" name="user_id" id="sc-assign-user-id" />
                 </form>
             </div>
 
             <script>
-            (function () {
-                const searchInput   = document.getElementById('sc-agent-search');
-                const resultsBox    = document.getElementById('sc-agent-results');
-                const noResults     = document.getElementById('sc-agent-no-results');
-                const assignForm    = document.getElementById('sc-assign-form');
-                const assignUserId  = document.getElementById('sc-assign-user-id');
-                const searchUrl     = '{{ route('simple-chat.agents.search') }}';
-                const alreadyLabel  = '{{ __('simple-chat::messages.dashboard.already_assigned') }}';
-                const assigned      = @json(array_map('strval', $assignedParticipants ?? []));
+                (function () {
+                    const searchInput = document.getElementById('sc-agent-search');
+                    const resultsBox = document.getElementById('sc-agent-results');
+                    const noResults = document.getElementById('sc-agent-no-results');
+                    const assignForm = document.getElementById('sc-assign-form');
+                    const assignUserId = document.getElementById('sc-assign-user-id');
+                    const searchUrl = '{{ route('simple-chat.agents.search') }}';
+                    const alreadyLabel = '{{ __('simple-chat::messages.dashboard.already_assigned') }}';
+                    const assigned = @json(array_map('strval', $assignedParticipants ?? []));
 
-                let debounce;
+                    let debounce;
 
-                searchInput.addEventListener('input', function () {
-                    clearTimeout(debounce);
-                    const q = this.value.trim();
-                    if (q.length < 2) {
-                        resultsBox.classList.add('hidden');
-                        noResults.classList.add('hidden');
-                        return;
-                    }
-                    debounce = setTimeout(() => fetchAgents(q), 300);
-                });
-
-                function fetchAgents(q) {
-                    fetch(searchUrl + '?q=' + encodeURIComponent(q), {
-                        headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
-                    })
-                    .then(r => r.json())
-                    .then(users => renderResults(users))
-                    .catch(() => {});
-                }
-
-                function renderResults(users) {
-                    resultsBox.innerHTML = '';
-                    if (!users.length) {
-                        resultsBox.classList.add('hidden');
-                        noResults.classList.remove('hidden');
-                        return;
-                    }
-                    noResults.classList.add('hidden');
-                    users.forEach(u => {
-                        const isAssigned = assigned.includes(String(u.id));
-                        const btn = document.createElement('button');
-                        btn.type = 'button';
-                        btn.className = 'w-full flex items-center justify-between px-3 py-2 hover:bg-violet-50 transition-colors text-left ' + (isAssigned ? 'opacity-50 cursor-not-allowed' : '');
-                        btn.innerHTML = `
-                            <span>
-                                <span class="font-medium text-gray-800">${u.name}</span>
-                                <span class="text-gray-400 text-xs ml-1">${u.email}</span>
-                            </span>
-                            ${isAssigned
-                                ? `<span class="text-xs text-gray-400 italic">${alreadyLabel}</span>`
-                                : `<span class="text-xs font-semibold text-violet-600">Assign &rarr;</span>`
-                            }`;
-                        if (!isAssigned) {
-                            btn.addEventListener('click', () => assignAgent(u));
+                    searchInput.addEventListener('input', function () {
+                        clearTimeout(debounce);
+                        const q = this.value.trim();
+                        if (q.length < 2) {
+                            resultsBox.classList.add('hidden');
+                            noResults.classList.add('hidden');
+                            return;
                         }
-                        resultsBox.appendChild(btn);
+                        debounce = setTimeout(() => fetchAgents(q), 300);
                     });
-                    resultsBox.classList.remove('hidden');
-                }
 
-                function assignAgent(u) {
-                    assignUserId.value = u.id;
-                    assignForm.submit();
-                }
-
-                // Close dropdown on outside click
-                document.addEventListener('click', function (e) {
-                    if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
-                        resultsBox.classList.add('hidden');
+                    function fetchAgents(q) {
+                        fetch(searchUrl + '?q=' + encodeURIComponent(q), {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' }
+                        })
+                            .then(r => r.json())
+                            .then(users => renderResults(users))
+                            .catch(() => { });
                     }
-                });
-            })();
+
+                    function renderResults(users) {
+                        resultsBox.innerHTML = '';
+                        if (!users.length) {
+                            resultsBox.classList.add('hidden');
+                            noResults.classList.remove('hidden');
+                            return;
+                        }
+                        noResults.classList.add('hidden');
+                        users.forEach(u => {
+                            const isAssigned = assigned.includes(String(u.id));
+                            const btn = document.createElement('button');
+                            btn.type = 'button';
+                            btn.className = 'w-full flex items-center justify-between px-3 py-2 hover:bg-violet-50 transition-colors text-left ' + (isAssigned ? 'opacity-50 cursor-not-allowed' : '');
+                            btn.innerHTML = `
+                                                    <span>
+                                                        <span class="font-medium text-gray-800">${u.name}</span>
+                                                        <span class="text-gray-400 text-xs ml-1">${u.email}</span>
+                                                    </span>
+                                                    ${isAssigned
+                                    ? `<span class="text-xs text-gray-400 italic">${alreadyLabel}</span>`
+                                    : `<span class="text-xs font-semibold text-violet-600">Assign &rarr;</span>`
+                                }`;
+                            if (!isAssigned) {
+                                btn.addEventListener('click', () => assignAgent(u));
+                            }
+                            resultsBox.appendChild(btn);
+                        });
+                        resultsBox.classList.remove('hidden');
+                    }
+
+                    function assignAgent(u) {
+                        assignUserId.value = u.id;
+                        assignForm.submit();
+                    }
+
+                    // Close dropdown on outside click
+                    document.addEventListener('click', function (e) {
+                        if (!searchInput.contains(e.target) && !resultsBox.contains(e.target)) {
+                            resultsBox.classList.add('hidden');
+                        }
+                    });
+                })();
             </script>
         @endif
 
@@ -243,9 +267,9 @@
                 @endphp
 
                 @if($lastDate !== $messageDate)
-                    @if($lastDate !== null)
-                        </div> {{-- Close previous sc-date-section --}}
-                    @endif
+                        @if($lastDate !== null)
+                            </div> {{-- Close previous sc-date-section --}}
+                        @endif
                     <div class="sc-date-section space-y-4" data-date="{{ $messageDate }}">
                         <div class="flex justify-center my-4 sticky top-0 z-10 date-indicator" data-date="{{ $messageDate }}">
                             <span
@@ -253,82 +277,81 @@
                                 {{ $displayDate }}
                             </span>
                         </div>
-                    @php $lastDate = $messageDate; @endphp
+                        @php $lastDate = $messageDate; @endphp
                 @endif
                 @include('simple-chat::components.message-item', ['message' => $message])
                 @if($loop->last)
                     </div> {{-- Close the final sc-date-section --}}
                 @endif
             @empty
-                @include('simple-chat::components.empty-messages')
-            @endforelse
-        </div>
+            @include('simple-chat::components.empty-messages')
+        @endforelse
+    </div>
 
-        <!-- Input -->
-        <div class="bg-white shadow px-4 py-4 sm:px-6 rounded-b-lg shrink-0 border border-gray-200">
-            @if(isset($canReply) && !$canReply)
-                <div class="text-center text-sm text-gray-500 py-2">
-                    @if($conversation->trashed())
-                        <div class="bg-gray-50 px-4 py-12 sm:px-6 flex justify-center items-center">
-                            <p class="text-gray-500 font-medium italic flex items-center">
-                                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                                {{ __('simple-chat::messages.status.deleted') }}
-                            </p>
-                        </div>
-                    @elseif($conversation->status === 'closed')
-                        <div class="bg-gray-50 px-4 py-12 sm:px-6 flex justify-center items-center">
-                            <p class="text-gray-500 font-medium italic flex items-center">
-                                <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                </svg>
-                                {{ __('simple-chat::messages.status.closed') }}
-                            </p>
-                        </div>
-                    @else
-                        <div class="bg-gray-50 px-4 py-12 sm:px-6 flex justify-center items-center">
-                            <p class="text-gray-500 font-medium italic flex items-center text-center">
-                                <svg class="h-5 w-5 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                                {{ __('simple-chat::messages.status.no_permission') }}
-                            </p>
-                        </div>
-                    @endif
-                </div>
-            @else
-                <form id="sc-message-form" class="flex w-full" onsubmit="sendMessage(event)">
-                    <div class="flex items-center w-full space-x-2">
-                        <div class="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 flex items-center border border-transparent focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all duration-200">
-                            @if(isset($editor) && $editor === 'wysiwyg')
-                                <div id="sc-quill-editor" class="flex-1 min-h-[40px] max-h-[150px] overflow-y-auto"></div>
-                                <input type="hidden" name="content" id="sc-content">
-                            @elseif(isset($editor) && $editor === 'modern')
-                                <div id="sc-modern-editor"
-                                     contenteditable="true"
-                                     class="flex-1 min-h-[24px] max-h-[150px] overflow-y-auto text-sm text-gray-900 placeholder-gray-400 focus:outline-none leading-relaxed"
-                                     data-placeholder="{{ __('simple-chat::messages.placeholders.type_message') }}"></div>
-                                <input type="hidden" name="content" id="sc-content">
-                            @else
-                                <textarea name="content" id="sc-content" rows="1"
-                                    class="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 placeholder-gray-500 resize-none py-1 block w-full sm:text-sm"
-                                    placeholder="{{ __('simple-chat::messages.placeholders.type_message') }}"
-                                    oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'"
-                                    required></textarea>
-                            @endif
-                        </div>
-                        <button type="submit"
-                            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white {{ config('simple-chat.theme.primary_color', 'bg-indigo-600') }} {{ config('simple-chat.theme.primary_hover', 'hover:bg-indigo-700') }} focus:outline-none focus:ring-2 focus:ring-offset-2 {{ config('simple-chat.theme.primary_ring', 'focus:ring-indigo-500') }} transition-colors">
-                            {{ __('simple-chat::messages.actions.send') }}
-                        </button>
+    <!-- Input -->
+    <div class="bg-white shadow px-4 py-4 sm:px-6 rounded-b-lg shrink-0 border border-gray-200">
+        @if(isset($canReply) && !$canReply)
+            <div class="text-center text-sm text-gray-500 py-2">
+                @if($conversation->trashed())
+                    <div class="bg-gray-50 px-4 py-12 sm:px-6 flex justify-center items-center">
+                        <p class="text-gray-500 font-medium italic flex items-center">
+                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            {{ __('simple-chat::messages.status.deleted') }}
+                        </p>
                     </div>
-                </form>
-            @endif
-        </div>
+                @elseif($conversation->status === 'closed')
+                    <div class="bg-gray-50 px-4 py-12 sm:px-6 flex justify-center items-center">
+                        <p class="text-gray-500 font-medium italic flex items-center">
+                            <svg class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                            </svg>
+                            {{ __('simple-chat::messages.status.closed') }}
+                        </p>
+                    </div>
+                @else
+                    <div class="bg-gray-50 px-4 py-12 sm:px-6 flex justify-center items-center">
+                        <p class="text-gray-500 font-medium italic flex items-center text-center">
+                            <svg class="h-5 w-5 mr-2 inline-block" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                            {{ __('simple-chat::messages.status.no_permission') }}
+                        </p>
+                    </div>
+                @endif
+            </div>
+        @else
+            <form id="sc-message-form" class="flex w-full" onsubmit="sendMessage(event)">
+                <div class="flex items-center w-full space-x-2">
+                    <div
+                        class="flex-1 bg-gray-50 rounded-xl px-4 py-2.5 flex items-center border border-transparent focus-within:border-indigo-300 focus-within:ring-2 focus-within:ring-indigo-100 transition-all duration-200">
+                        @if(isset($editor) && $editor === 'wysiwyg')
+                            <div id="sc-quill-editor" class="flex-1 min-h-[40px] max-h-[150px] overflow-y-auto"></div>
+                            <input type="hidden" name="content" id="sc-content">
+                        @elseif(isset($editor) && $editor === 'modern')
+                            <div id="sc-modern-editor" contenteditable="true"
+                                class="flex-1 min-h-[24px] max-h-[150px] overflow-y-auto text-sm text-gray-900 placeholder-gray-400 focus:outline-none leading-relaxed"
+                                data-placeholder="{{ __('simple-chat::messages.placeholders.type_message') }}"></div>
+                            <input type="hidden" name="content" id="sc-content">
+                        @else
+                            <textarea name="content" id="sc-content" rows="1"
+                                class="flex-1 bg-transparent border-none focus:ring-0 text-gray-900 placeholder-gray-500 resize-none py-1 block w-full sm:text-sm"
+                                placeholder="{{ __('simple-chat::messages.placeholders.type_message') }}"
+                                oninput="this.style.height = ''; this.style.height = this.scrollHeight + 'px'" required></textarea>
+                        @endif
+                    </div>
+                    <button type="submit"
+                        class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white {{ config('simple-chat.theme.primary_color', 'bg-indigo-600') }} {{ config('simple-chat.theme.primary_hover', 'hover:bg-indigo-700') }} focus:outline-none focus:ring-2 focus:ring-offset-2 {{ config('simple-chat.theme.primary_ring', 'focus:ring-indigo-500') }} transition-colors">
+                        {{ __('simple-chat::messages.actions.send') }}
+                    </button>
+                </div>
+            </form>
+        @endif
+    </div>
     </div>
 
     <!-- Close Confirmation Modal -->
@@ -532,10 +555,26 @@
 
     @if(isset($editor) && $editor === 'modern')
         <style>
-            #sc-modern-editor:empty:before { content: attr(data-placeholder); color: #9ca3af; cursor: text; }
-            #sc-modern-editor { word-break: break-word; white-space: pre-wrap; transition: all 0.2s; }
+            #sc-modern-editor:empty:before {
+                content: attr(data-placeholder);
+                color: #9ca3af;
+                cursor: text;
+            }
+
+            #sc-modern-editor {
+                word-break: break-word;
+                white-space: pre-wrap;
+                transition: all 0.2s;
+            }
         </style>
     @endif
+
+    <style>
+        .sc-plain-message {
+            overflow-wrap: anywhere;
+            white-space: break-spaces;
+        }
+    </style>
 
     @if($chatConfig['driver'] === 'appwrite')
         <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
@@ -837,7 +876,7 @@
                 for (let optEl of optimisticMatches) {
                     const optContent = optEl.querySelector('.sc-msg-content').textContent.trim();
                     const realContent = msg.content.replace(/<[^>]*>?/gm, '').trim(); // Basic strip tags for comparison
-                    
+
                     if (optContent === realContent || optEl.querySelector('.sc-msg-content').innerHTML.trim() === msg.content.trim()) {
                         // Found a match! Update it and skip appending
                         optEl.dataset.id = msg.id;
@@ -863,7 +902,7 @@
                 dateDiv.className = "flex justify-center my-4 sticky top-0 z-10 date-indicator";
                 dateDiv.dataset.date = msgDateStr;
                 dateDiv.innerHTML = `<span class="px-3 py-1 bg-gray-100/80 backdrop-blur-sm text-gray-500 text-xs rounded-full shadow-sm border border-gray-200">${day}</span>`;
-                
+
                 section.appendChild(dateDiv);
                 container.appendChild(section);
                 lastAppendedDate = msgDateStr;
@@ -889,7 +928,7 @@
                 if (isMe) contentEl.classList.add('text-white');
             } else {
                 contentEl.textContent = msg.content;
-                contentEl.classList.add('whitespace-pre-wrap');
+                contentEl.classList.add('sc-plain-message');
             }
 
             const emptyState = document.getElementById('sc-empty-state');
