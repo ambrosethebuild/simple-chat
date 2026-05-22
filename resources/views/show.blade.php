@@ -61,34 +61,64 @@
                             </div>
                         </div>
                     @endif
-                    @if($conversation->status != 'closed' && !$conversation->trashed())
-                        @can("close-ticket")
+                    @php
+                        $canCloseTicket = $conversation->status != 'closed'
+                            && !$conversation->trashed()
+                            && auth()->check()
+                            && auth()->user()->can(config('simple-chat.support.permissions.close_ticket', 'close-ticket'));
+
+                        $canDeleteTicket = config('simple-chat.mode') === 'support'
+                            && auth()->check()
+                            && auth()->user()->can(config('simple-chat.support.permissions.delete_ticket', 'delete-ticket'));
+                    @endphp
+                    @if($canCloseTicket || $canDeleteTicket)
+                        <div class="relative inline-block text-left">
                             <button type="button"
-                                class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition-colors"
-                                onclick="document.getElementById('sc-close-modal').classList.remove('hidden')">
-                                {{ __('simple-chat::messages.actions.close_ticket') }}
+                                class="mt-1 inline-flex items-center px-3 py-1.5 border border-gray-300 text-xs font-medium rounded shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                                onclick="document.getElementById('sc-ticket-actions-dropdown').classList.toggle('hidden')">
+                                {{ __('simple-chat::messages.actions.ticket_options') }}
+                                <svg class="ml-2 -mr-0.5 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                </svg>
                             </button>
-                        @endcan
-                    @endif
-                    @if(config('simple-chat.mode') === 'support' && auth()->check() && auth()->user()->can(config('simple-chat.support.permissions.delete_ticket', 'delete-ticket')))
-                        @if($conversation->trashed())
-                            <button type="button"
-                                class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
-                                onclick="document.getElementById('sc-restore-modal').classList.remove('hidden')">
-                                {{ __('simple-chat::messages.actions.restore_ticket') }}
-                            </button>
-                            <button type="button"
-                                class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-                                onclick="document.getElementById('sc-delete-modal').classList.remove('hidden')">
-                                {{ __('simple-chat::messages.actions.permanent_delete') }}
-                            </button>
-                        @else
-                            <button type="button"
-                                class="mt-1 inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded shadow-sm text-white bg-gray-600 hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-                                onclick="document.getElementById('sc-delete-modal').classList.remove('hidden')">
-                                {{ __('simple-chat::messages.actions.delete_ticket') }}
-                            </button>
-                        @endif
+                            <div id="sc-ticket-actions-dropdown"
+                                class="hidden origin-top-right absolute right-0 mt-2 w-44 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 focus:outline-none z-30"
+                                role="menu">
+                                <div class="py-1" role="none">
+                                    @if($canCloseTicket)
+                                        <button type="button"
+                                            class="text-red-700 block w-full px-4 py-2 text-left text-sm hover:bg-red-50"
+                                            role="menuitem"
+                                            onclick="document.getElementById('sc-ticket-actions-dropdown').classList.add('hidden'); document.getElementById('sc-close-modal').classList.remove('hidden')">
+                                            {{ __('simple-chat::messages.actions.close_ticket') }}
+                                        </button>
+                                    @endif
+                                    @if($canDeleteTicket)
+                                        @if($conversation->trashed())
+                                            <button type="button"
+                                                class="text-green-700 block w-full px-4 py-2 text-left text-sm hover:bg-green-50"
+                                                role="menuitem"
+                                                onclick="document.getElementById('sc-ticket-actions-dropdown').classList.add('hidden'); document.getElementById('sc-restore-modal').classList.remove('hidden')">
+                                                {{ __('simple-chat::messages.actions.restore_ticket') }}
+                                            </button>
+                                            <button type="button"
+                                                class="text-red-700 block w-full px-4 py-2 text-left text-sm hover:bg-red-50"
+                                                role="menuitem"
+                                                onclick="document.getElementById('sc-ticket-actions-dropdown').classList.add('hidden'); document.getElementById('sc-delete-modal').classList.remove('hidden')">
+                                                {{ __('simple-chat::messages.actions.permanent_delete') }}
+                                            </button>
+                                        @else
+                                            <button type="button"
+                                                class="text-red-700 block w-full px-4 py-2 text-left text-sm hover:bg-red-50"
+                                                role="menuitem"
+                                                onclick="document.getElementById('sc-ticket-actions-dropdown').classList.add('hidden'); document.getElementById('sc-delete-modal').classList.remove('hidden')">
+                                                {{ __('simple-chat::messages.actions.delete_ticket') }}
+                                            </button>
+                                        @endif
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
                     @endif
                 </div>
             </div>
